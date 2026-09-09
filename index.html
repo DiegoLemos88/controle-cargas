@@ -1,0 +1,1702 @@
+<!doctype html>
+<title>Controle de Carretas</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  /* Committed single (light) visual identity — matches the reference layout
+     intentionally, so no dark-mode variant is defined. */
+  :root{
+    color-scheme: light;
+    --page:#e9ebe7;
+    --shell:#ffffff;
+    --surface:#f1f1ee;
+    --surface-2:#f7f7f5;
+    --cream:#f5efe0;
+    --chip:#ffffff;
+    --card-dark:#0d0d0c;
+    --card-dark-2:#1f1f1d;
+    --ink:#0d0d0c;
+    --ink-2:#54544e;
+    --ink-muted:#94948c;
+    --border:rgba(13,13,12,0.08);
+    --accent:#35d359;
+    --accent-2:#22b346;
+    --accent-ink:#1c8a3c;
+    --accent-soft:#dcf7e2;
+    --good:#1c8a3c;
+    --good-soft:#d9f0df;
+    --critical:#c23150;
+    --critical-soft:#fbdde3;
+    --warning:#a86400;
+    --warning-soft:#fdf1dc;
+    --shadow: 0 10px 24px -16px rgba(13,13,12,0.18);
+    --shadow-lg: 0 20px 40px -20px rgba(13,13,12,0.30);
+    --font-display: "Poppins", system-ui, sans-serif;
+    --font-body: "Poppins", system-ui, sans-serif;
+    --font-mono: "Poppins", system-ui, sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  body{background:var(--page); color:var(--ink); font-family:var(--font-body); -webkit-font-smoothing:antialiased;}
+  h1,h2,h3,.disp{font-family:var(--font-display); font-weight:700; text-wrap:balance;}
+  ::selection{background:var(--accent-soft); color:var(--accent-ink);}
+  a{color:var(--accent-ink);}
+  button{font-family:inherit;}
+  svg{display:block;}
+
+  /* ---------- shell ---------- */
+  #app{max-width:none;}
+  body{padding:18px;}
+  .shell{
+    display:flex; align-items:stretch; min-height:calc(100vh - 36px); max-width:1440px; margin:0 auto;
+    background:var(--shell); border-radius:28px; box-shadow:var(--shadow-lg); overflow:hidden;
+  }
+  .sidebar{
+    width:88px; flex-shrink:0; background:var(--shell); border-right:1px solid var(--border);
+    display:flex; flex-direction:column; align-items:center; padding:24px 0 18px; gap:4px;
+    position:sticky; top:18px; height:calc(100vh - 36px);
+  }
+  .side-logo{
+    width:42px; height:42px; border-radius:13px; margin-bottom:22px; flex-shrink:0;
+    background:linear-gradient(155deg, var(--accent-2), var(--accent)); border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; color:#fff;
+  }
+  .side-logo svg{width:19px; height:19px;}
+
+  .side-nav{display:flex; flex-direction:column; gap:6px; align-items:center;}
+  .side-item{
+    width:48px; height:48px; border:none; background:transparent; color:var(--ink-2);
+    display:flex; align-items:center; justify-content:center; border-radius:15px; cursor:pointer; position:relative; flex-shrink:0;
+  }
+  .side-item svg{width:20px; height:20px;}
+  .side-item:hover{background:var(--surface-2); color:var(--ink);}
+  .side-item.active{background:var(--ink); color:#fff;}
+
+  .side-bottom{margin-top:auto; display:flex; flex-direction:column; gap:6px; align-items:center; padding-top:14px;}
+
+  .main{flex:1; min-width:0; max-height:calc(100vh - 36px); overflow-y:auto;}
+  .main-inner{max-width:1180px; margin:0; padding:22px 30px 60px;}
+
+  .mobile-tabbar{display:none;}
+  @media (max-width:820px){
+    body{padding:0;}
+    .shell{border-radius:0; min-height:100vh;}
+    .sidebar{display:none;}
+    .main{max-height:none; overflow-y:visible;}
+    .main-inner{padding:16px 16px 108px;}
+    .mobile-tabbar{
+      display:flex; align-items:center; justify-content:space-around;
+      position:fixed; left:14px; right:14px; bottom:14px; z-index:80;
+      background:#fff; border-radius:26px; padding:8px 8px; box-shadow:var(--shadow-lg);
+    }
+    .mt-item{
+      width:44px; height:44px; border:none; background:transparent; color:var(--ink-muted);
+      display:flex; align-items:center; justify-content:center; border-radius:14px; cursor:pointer; flex-shrink:0;
+    }
+    .mt-item svg{width:20px; height:20px;}
+    .mt-item.active{color:var(--ink); background:var(--surface);}
+    .mt-fab{
+      width:56px; height:56px; border-radius:50%; background:var(--ink); color:#fff; border:none;
+      display:flex; align-items:center; justify-content:center; cursor:pointer; margin-top:-30px; flex-shrink:0;
+      box-shadow:0 12px 22px -8px rgba(13,13,12,.5);
+    }
+    .mt-fab svg{width:22px; height:22px;}
+  }
+
+  /* ---------- header ---------- */
+  .util-row{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:2px 0 26px; flex-wrap:wrap;}
+  .title-row{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:0 0 24px; flex-wrap:wrap;}
+  .greet h1{font-size:34px; font-weight:700; margin:0; line-height:1.12; max-width:420px;}
+  .title-controls{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+
+  .head-actions{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .circle-btn{
+    width:44px; height:44px; border-radius:50%; background:var(--surface); border:none;
+    display:flex; align-items:center; justify-content:center; color:var(--ink-2); cursor:pointer; position:relative; flex-shrink:0;
+  }
+  .circle-btn svg{width:18px; height:18px;}
+  .circle-btn:hover{background:var(--surface-2); color:var(--ink);}
+  .circle-btn .ping{position:absolute; top:7px; right:8px; width:7px; height:7px; border-radius:50%; background:var(--critical); border:2px solid var(--surface);}
+  .notif-btn{
+    display:inline-flex; align-items:center; gap:9px; background:var(--surface); border:none; border-radius:99px;
+    padding:0 16px 0 6px; height:44px; cursor:pointer; color:var(--ink); font-size:13.5px; font-weight:600; white-space:nowrap;
+  }
+  .notif-btn:hover{background:var(--surface-2);}
+  .notif-btn .nb-icon{width:32px; height:32px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--ink-2); flex-shrink:0; box-shadow:var(--shadow);}
+  .notif-btn .nb-icon svg{width:15px; height:15px;}
+  .notif-btn .nb-count{color:var(--ink-muted); font-weight:600;}
+  .avatar-mark{width:44px; height:44px; border-radius:50%; background:linear-gradient(155deg, var(--accent-2), var(--accent)); display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; border:none; cursor:pointer; padding:0; position:relative;}
+  .avatar-mark svg{width:18px; height:18px;}
+  .avatar-dot{position:absolute; bottom:1px; right:1px; width:12px; height:12px; border-radius:50%; background:var(--good); border:2px solid #fff;}
+
+  .search-box{
+    display:flex; align-items:center; gap:9px; background:var(--surface); border:none; border-radius:99px;
+    padding:0 8px 0 16px; height:44px; min-width:300px; color:var(--ink-muted);
+  }
+  .search-box svg{width:16px; height:16px; flex-shrink:0;}
+  .search-box input{border:none; background:none; outline:none; font-size:13.5px; color:var(--ink); flex:1; min-width:0;}
+  .pill-btn{
+    display:inline-flex; align-items:center; gap:9px; background:var(--surface); border:none; border-radius:99px;
+    padding:6px 16px 6px 6px; height:52px; cursor:pointer; color:var(--ink); text-align:left; white-space:nowrap;
+  }
+  .pill-btn:hover{background:var(--surface-2);}
+  .pill-btn .pb-icon{width:38px; height:38px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--ink-2); flex-shrink:0;}
+  .pill-btn .pb-icon svg{width:16px; height:16px;}
+  .pill-btn .pb-label{font-size:10.5px; color:var(--ink-muted); font-weight:600; text-transform:uppercase; letter-spacing:.04em;}
+  .pill-btn .pb-value{font-size:13px; font-weight:700;}
+  .pill-btn .pb-chev{color:var(--ink-muted); margin-left:2px;}
+  .pill-btn .pb-chev svg{width:14px; height:14px;}
+  .btn-black{
+    display:inline-flex; align-items:center; gap:9px; height:52px; padding:0 20px; border-radius:99px; border:none;
+    background:var(--ink); color:#fff; font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap; flex-shrink:0;
+  }
+  .btn-black svg{width:15px; height:15px;}
+  .btn-black:hover{background:var(--card-dark-2);}
+  .btn-share{
+    display:inline-flex; align-items:center; gap:9px; height:52px; padding:0 20px; border-radius:99px; border:none;
+    background:var(--surface); color:var(--ink); font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap; flex-shrink:0;
+  }
+  .btn-share svg{width:15px; height:15px;}
+  .btn-share:hover{background:var(--surface-2);}
+  .btn-share span{white-space:nowrap;}
+
+  .popover{
+    position:absolute; top:calc(100% + 8px); right:0; z-index:60; width:250px;
+    background:#fff; border:none; border-radius:14px; box-shadow:var(--shadow-lg); padding:14px 15px;
+    font-size:12.5px; color:var(--ink-2); line-height:1.55;
+  }
+  .popover.pop-side{top:0; left:calc(100% + 10px); right:auto;}
+  .popover h4{margin:0 0 6px; font-size:13.5px; color:var(--ink); font-weight:600;}
+  .popover ul{margin:0; padding-left:16px;}
+  .popover li{margin-bottom:4px;}
+  .switch-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:8px; margin-top:8px; border-top:1px solid var(--border);}
+  .switch{width:36px; height:20px; border-radius:99px; background:var(--surface); border:none; cursor:pointer; position:relative; flex-shrink:0;}
+  .switch.on{background:var(--accent);}
+  .switch::after{content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; transition:left .15s;}
+  .switch.on::after{left:18px;}
+
+  /* ---------- banners / dropzone ---------- */
+  .banner{display:flex; gap:10px; align-items:flex-start; padding:12px 14px; border-radius:14px; background:var(--warning-soft); color:var(--ink); font-size:13px; margin-bottom:14px;}
+  .banner svg{width:16px; height:16px; flex-shrink:0; margin-top:1px; color:var(--warning);}
+
+  /* ---------- layout grid ---------- */
+  .col-side{min-width:0; display:flex; flex-direction:column; gap:16px;}
+
+  .pager-row{display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-bottom:2px;}
+  .pager-btn{width:30px; height:30px; border-radius:50%; background:#fff; border:none; box-shadow:var(--shadow); color:var(--ink-2); display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .pager-btn svg{width:14px; height:14px;}
+  .pager-btn:disabled{opacity:.4; cursor:default;}
+
+  /* ---------- KPI tiles (flat card row per group) ---------- */
+  .kpi-stack-wrap{display:flex; flex-direction:column; gap:16px; margin-bottom:16px;}
+  .kpi-section-label{font-size:15px; font-weight:600; color:var(--ink); margin:0 2px 10px;}
+  .kpi-row{display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:12px;}
+  .kpi-tile{background:var(--surface); border-radius:24px; padding:18px 20px; min-height:112px; display:flex; flex-direction:column; justify-content:center;}
+  .kt-top{display:flex; align-items:flex-start; justify-content:space-between; gap:8px;}
+  .kt-label{font-size:13.5px; font-weight:600; color:var(--ink); line-height:1.25;}
+  .tile-badge{width:26px; height:26px; border-radius:50%; background:#fff; color:var(--ink-2); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:var(--shadow);}
+  .tile-badge svg{width:12px; height:12px;}
+  .stat-card.dark .tile-badge{background:rgba(255,255,255,.14); color:#fff; box-shadow:none;}
+  .kt-value{font-size:28px; font-weight:700; line-height:1.05; letter-spacing:-.01em; margin-top:12px;}
+  .kt-trend{display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700; margin-top:8px; padding:3px 9px; border-radius:99px; width:fit-content;}
+  .kt-trend svg{width:11px; height:11px;}
+  .kt-trend.up{background:var(--good-soft); color:var(--good);}
+  .kt-trend.down{background:var(--critical-soft); color:var(--critical);}
+
+  /* ---------- stat pair (Total na unidade / Peso recebido) ---------- */
+  .stat-stack{display:flex; flex-direction:column; gap:14px; height:100%;}
+  .stat-card{background:var(--surface); border-radius:24px; padding:20px 22px; flex:1; display:flex; flex-direction:column; justify-content:center;}
+  .stat-card.dark{background:linear-gradient(165deg, var(--card-dark-2), var(--card-dark)); box-shadow:0 16px 32px -14px rgba(0,0,0,.4);}
+  .stat-card.dark .stat-label{color:#fff;}
+  .stat-card.dark .stat-value{color:#fff;}
+  .stat-label{font-size:15.5px; font-weight:600; color:var(--ink); margin-bottom:11px;}
+  .stat-row{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
+  .stat-value{font-size:36px; font-weight:700; line-height:1;}
+  .pill-delta{display:inline-flex; padding:3px 10px; border-radius:99px; font-size:12.5px; font-weight:700;}
+  .pill-delta.good{background:var(--good-soft); color:var(--good);}
+  .pill-delta.bad{background:var(--critical-soft); color:var(--critical);}
+  .pill-delta.flat{background:#fff; color:var(--ink-muted);}
+  .stat-compare{display:flex; align-items:center; gap:5px; font-size:12px; font-weight:600; margin-top:9px;}
+  .stat-compare svg{width:13px; height:13px; flex-shrink:0;}
+  .stat-compare.muted{color:rgba(255,255,255,.55); font-weight:500;}
+
+
+  .card{background:var(--surface); border-radius:24px; padding:22px 24px 24px;}
+  .card-flat{background:var(--surface); border-radius:24px; padding:22px 24px 24px;}
+  .card-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:14px;}
+  .card-head h3{font-size:15.5px; font-weight:600; margin:0; display:flex; align-items:center; gap:8px;}
+  .card-head .hint{font-size:11.5px; color:var(--ink-muted); white-space:nowrap;}
+
+  /* recent list */
+  .list-rows{display:flex; flex-direction:column;}
+  .list-row{display:flex; align-items:center; gap:11px; padding:10px 2px; border-radius:12px;}
+  .list-row-clickable{cursor:pointer;}
+  .list-row:hover{background:var(--surface-2);}
+  .avatar-chip{width:34px; height:34px; border-radius:50%; background:var(--critical-soft); color:var(--critical); display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; flex-shrink:0;}
+  .avatar-chip svg{width:16px; height:16px;}
+  .avatar-chip.building{background:var(--surface); color:var(--ink);}
+  .list-row .lr-title{font-size:15px; font-weight:700; color:#000;}
+  .list-row .lr-sub{font-size:12px; color:var(--ink-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:320px;}
+  .list-row .lr-body{flex:1; min-width:0;}
+  .list-row .lr-right{font-size:13px; font-weight:700; color:#000; flex-shrink:0; text-align:right; font-variant-numeric:tabular-nums;}
+
+  /* ---------- dark highlight cards ---------- */
+  .dark-card{background:linear-gradient(165deg, var(--card-dark-2), var(--card-dark)); color:#fff; border-radius:24px; padding:22px;}
+  .dark-card h3{font-size:16px; margin:0 0 4px;}
+  .dark-card .ds{font-size:12.5px; color:#aeb2c2; margin-bottom:16px;}
+  .progress-track{height:9px; border-radius:99px; background:rgba(255,255,255,.14); overflow:hidden; margin-bottom:10px;}
+  .progress-fill{height:100%; border-radius:99px; background:var(--accent);}
+  .progress-caption{font-size:11.5px; color:#aeb2c2; margin-bottom:16px;}
+  .progress-caption b{color:#fff; font-weight:600;}
+  .btn-white{display:block; width:100%; text-align:center; background:#fff; color:var(--ink); border:none; border-radius:12px; padding:11px; font-size:13.5px; font-weight:600; cursor:pointer;}
+  .btn-white:hover{background:#eceef4;}
+
+  .highlight-card{background:linear-gradient(165deg, var(--card-dark-2), var(--card-dark)); color:#fff; border-radius:24px; padding:20px 22px;}
+  .highlight-top{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+  .highlight-dot{width:8px; height:8px; border-radius:50%; background:var(--good); flex-shrink:0;}
+  .highlight-dot.warn{background:var(--warning);}
+  .highlight-title{font-size:14.5px; font-weight:600;}
+  .highlight-date{font-size:13px; font-weight:700; margin-bottom:6px;}
+  .highlight-desc{font-size:12px; color:#aeb2c2; line-height:1.5;}
+
+  .hbars{display:flex; flex-direction:column; gap:11px;}
+  .hbar-row{display:flex; flex-direction:column; gap:5px;}
+  .hbar-label{font-size:12.5px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .hbar-track{height:7px; border-radius:99px; background:rgba(255,255,255,0.14); overflow:hidden;}
+  .hbar-fill{height:100%; border-radius:99px; background:var(--accent);}
+  .hbar-value{font-size:11.5px; color:#aeb2c2;}
+
+  /* ---------- collapsible full sections ---------- */
+  .section{margin-top:14px;}
+  .section-head{
+    display:flex; align-items:center; justify-content:space-between; gap:14px; padding:20px 22px; cursor:pointer;
+    user-select:none; background:var(--cream); border-radius:24px;
+  }
+  .section-head h2{display:flex; align-items:center; gap:6px; font-size:19px; font-weight:700; margin:0; flex-direction:column; align-items:flex-start;}
+  .section-head .sec-title-row{display:flex; align-items:center; gap:9px;}
+  .section-head .sec-hint{font-size:12.5px; font-weight:500; color:var(--ink-muted);}
+  .sec-icon{width:26px; height:26px; border-radius:9px; background:#fff; color:var(--ink); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .sec-icon svg{width:14px; height:14px;}
+  .section-chevron{width:38px; height:38px; border-radius:50%; background:#fff; color:var(--ink-2); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .section-chevron svg{width:16px; height:16px; transition:transform .15s;}
+  .section-head.collapsed .section-chevron svg{transform:rotate(-90deg);}
+
+  .toggle-row{display:flex; gap:6px; margin-bottom:12px;}
+  .toggle-btn{padding:6px 12px; border-radius:8px; border:none; background:var(--surface); font-size:12.5px; font-weight:600; color:var(--ink-2); cursor:pointer;}
+  .toggle-btn.active{background:var(--accent); color:#fff;}
+  .motivo-tag{display:inline-block; background:var(--critical-soft); color:var(--critical); font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; padding:2px 6px; border-radius:99px; margin-right:6px; vertical-align:middle; white-space:nowrap;}
+
+  .table-scroll{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; font-size:12.8px; min-width:640px;}
+  thead th{text-align:left; font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); padding:8px 10px; white-space:nowrap;}
+  tbody td{padding:10px 10px; color:var(--ink-2); vertical-align:middle;}
+  tbody tr:hover{background:var(--surface-2);}
+  tbody tr:hover td:first-child{border-radius:10px 0 0 10px;}
+  tbody tr:hover td:last-child{border-radius:0 10px 10px 0;}
+  td.mono, .tabular{font-variant-numeric:tabular-nums;}
+  td.strong{color:var(--ink); font-weight:600;}
+  .row-lead{display:flex; align-items:center; gap:9px;}
+
+  .pill{display:inline-flex; align-items:center; gap:5px; padding:3px 9px; border-radius:99px; font-size:11px; font-weight:600; white-space:nowrap;}
+  .pill::before{content:""; width:6px; height:6px; border-radius:99px; background:currentColor;}
+  .pill-good{background:var(--good-soft); color:var(--good);}
+  .pill-warning{background:var(--warning-soft); color:var(--warning);}
+  .pill-critical{background:var(--critical-soft); color:var(--critical);}
+  .pill-neutral{background:var(--surface); color:var(--ink-muted);}
+  .empty-note{font-size:13px; color:var(--ink-muted); padding:18px 4px; text-align:center;}
+
+  .filter-chip-row{display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;}
+  .filter-chip{background:var(--good-soft); color:var(--good); font-size:12.5px; font-weight:600; padding:5px 12px; border-radius:99px;}
+  .filter-chip-clear{background:none; border:none; font:inherit; font-size:12.5px; font-weight:600; color:var(--ink-muted); text-decoration:underline; cursor:pointer; padding:0;}
+
+  /* ---------- horizontal bars ---------- */
+  .bars{display:flex; flex-direction:column; gap:6px;}
+  .bar-row{display:grid; grid-template-columns:minmax(0,140px) 1fr 92px; align-items:center; gap:12px; padding:9px 6px; border-radius:99px; transition:background .15s;}
+  .bar-row:hover{background:var(--surface-2);}
+  .bar-row .b-label{font-size:14.5px; font-weight:700; color:var(--ink); letter-spacing:.01em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .bar-track{position:relative; height:20px; background:var(--surface); border-radius:99px; overflow:hidden;}
+  .bar-fill{position:absolute; left:0; top:0; bottom:0; border-radius:99px; background:var(--accent); transition:width .5s ease;}
+  .bar-row .b-value{font-size:15px; font-weight:800; color:var(--ink); text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .bar-row .b-value-badge{
+    display:inline-flex; justify-self:end; background:var(--ink); color:#fff; font-size:13px; font-weight:800;
+    padding:5px 12px; border-radius:99px; white-space:nowrap; font-variant-numeric:tabular-nums;
+  }
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+  @media (max-width:700px){ .grid-2{grid-template-columns:1fr;} }
+  .grid-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; align-items:stretch;}
+  @media (max-width:980px){ .grid-3{grid-template-columns:1fr 1fr;} }
+  @media (max-width:600px){ .grid-3{grid-template-columns:1fr;} }
+  .grid-main-side{display:grid; grid-template-columns:1.6fr 1fr; gap:14px; align-items:stretch; margin-bottom:14px;}
+  @media (max-width:900px){ .grid-main-side{grid-template-columns:1fr;} }
+
+  /* ---------- buttons ---------- */
+  .btn{display:inline-flex; align-items:center; gap:7px; height:38px; padding:0 15px; border-radius:12px; border:none; font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap;}
+  .btn svg{width:15px; height:15px;}
+  .btn-primary{background:var(--accent); color:#fff;}
+  .btn-primary:hover{background:var(--accent-2);}
+  .btn-ghost{background:var(--surface); color:var(--ink);}
+  .btn-ghost:hover{background:var(--surface-2);}
+  .btn-danger{background:var(--critical); color:#fff;}
+  .btn-danger:hover{filter:brightness(1.08);}
+  .btn:disabled{opacity:.45; cursor:default;}
+
+  /* ---------- modal ---------- */
+  .overlay{position:fixed; inset:0; background:rgba(10,10,20,0.5); z-index:100; display:flex; align-items:center; justify-content:center; padding:16px;}
+  .drag-overlay{position:fixed; inset:0; background:rgba(255,106,43,0.12); z-index:90; border:3px dashed var(--accent); display:flex; align-items:center; justify-content:center; pointer-events:none;}
+  .drag-overlay .dg{background:#fff; padding:20px 30px; border-radius:16px; font-size:16px; font-weight:600; box-shadow:var(--shadow-lg); color:var(--accent-ink);}
+  .modal{background:#fff; border-radius:20px; max-width:560px; width:100%; max-height:88vh; overflow-y:auto; box-shadow:var(--shadow-lg); padding:24px 24px 22px;}
+  .modal h3{font-size:20px; margin:0 0 4px;}
+  .modal .m-sub{font-size:12.5px; color:var(--ink-muted); margin-bottom:16px;}
+  .field-row{display:flex; flex-direction:column; gap:5px; margin-bottom:14px;}
+  .field-row label{font-size:11.5px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted);}
+  .field-row input[type=date]{height:38px; border-radius:10px; border:none; background:var(--surface-2); padding:0 12px; font-size:14px; color:var(--ink);}
+  .preview-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:14px 0 6px;}
+  .preview-tile{background:var(--surface-2); border-radius:12px; padding:10px 12px;}
+  .preview-tile .pv{font-size:19px; font-weight:700;}
+  .preview-tile .pl{font-size:10.5px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.05em;}
+  .conflict-note{display:flex; gap:8px; background:var(--critical-soft); color:var(--critical); border-radius:12px; padding:11px 13px; font-size:12.5px; margin-bottom:14px; align-items:flex-start;}
+  .conflict-note.warn{background:var(--warning-soft); color:var(--warning);}
+  .conflict-note svg{width:15px; height:15px; flex-shrink:0; margin-top:1px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:9px; margin-top:8px;}
+  .parse-error{background:var(--critical-soft); color:var(--critical); border-radius:12px; padding:12px 13px; font-size:13px; white-space:pre-wrap;}
+
+  .history-menu{
+    position:absolute; top:calc(100% + 8px); right:0; z-index:60; background:#fff; border:none;
+    border-radius:16px; box-shadow:var(--shadow-lg); width:290px; max-height:360px; overflow-y:auto; padding:8px;
+  }
+  .history-menu .hm-title{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); padding:6px 8px 8px;}
+  .history-menu .hm-row{display:flex; align-items:stretch; gap:2px;}
+  .history-menu .hm-main{flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:1px; padding:9px 10px; border-radius:9px; border:none; background:transparent; cursor:pointer; font-size:13px; color:var(--ink); text-align:left;}
+  .history-menu .hm-main:hover{background:var(--surface-2);}
+  .history-menu .hm-main.active{background:var(--accent-soft);}
+  .history-menu .hm-date{font-weight:600;}
+  .hm-periodo{font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--accent-ink); background:var(--accent-soft); border-radius:99px; padding:2px 7px; margin-left:4px; vertical-align:middle;}
+  .history-menu .hm-meta{font-size:11px; color:var(--ink-muted);}
+  .history-menu .hm-del{
+    flex-shrink:0; width:34px; border:none; background:transparent; border-radius:9px; color:var(--ink-muted);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .history-menu .hm-del svg{width:15px; height:15px;}
+  .history-menu .hm-del:hover{background:var(--critical-soft); color:var(--critical);}
+  .history-menu .hm-empty{padding:14px 10px; font-size:12.5px; color:var(--ink-muted); line-height:1.5;}
+  .history-menu .hm-confirm{align-items:center; padding:9px 10px; border-radius:9px; background:var(--critical-soft); font-size:12.5px; color:var(--ink); justify-content:space-between; gap:8px;}
+  .hm-confirm-actions{display:flex; gap:6px; flex-shrink:0;}
+  .hm-confirm-actions button{border:none; border-radius:8px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;}
+  .hm-confirm-no{background:#fff; color:var(--ink-2);}
+  .hm-confirm-yes{background:var(--critical); color:#fff;}
+
+  /* ---------- uploads (history) page ---------- */
+  .uploads-page-head{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:20px;}
+  .uploads-page-head h1{font-size:26px; margin:0 0 4px;}
+  .uploads-page-head .m-sub{font-size:13px; color:var(--ink-muted);}
+  .uploads-list{display:flex; flex-direction:column; gap:10px;}
+  .upload-row{background:var(--surface); border-radius:20px; padding:16px 20px; display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+  .upload-row-main{flex:1; min-width:200px;}
+  .upload-row-date{font-size:16px; font-weight:700; color:var(--ink);}
+  .upload-row-meta{font-size:12.5px; color:var(--ink-muted); margin-top:3px;}
+  .upload-row-stats{display:flex; gap:22px; flex-shrink:0;}
+  .upload-row-stats div{font-size:12.5px; color:var(--ink-muted); text-align:center;}
+  .upload-row-stats b{display:block; font-size:19px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .upload-row-actions{display:flex; gap:8px; flex-shrink:0;}
+  .upload-row.is-current{background:var(--accent-soft);}
+  .upload-row-confirm{flex:1; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; background:var(--critical-soft); border-radius:14px; padding:10px 16px; margin:-4px;}
+  .upload-row-confirm span{font-size:13px; color:var(--ink); font-weight:600;}
+
+  footer{text-align:center; color:var(--ink-muted); font-size:11.5px; padding:22px 0 6px;}
+
+  .shell.compact .kpi-tile, .shell.compact .stat-card, .shell.compact .card, .shell.compact .card-flat, .shell.compact .dark-card, .shell.compact .highlight-card{padding:8px 11px;}
+  .shell.compact .kpi-tile{min-height:0;}
+  .shell.compact tbody td, .shell.compact thead th{padding:6px 9px;}
+  .shell.compact .kt-value{font-size:16px;}
+
+  @media (max-width:860px){
+    .preview-grid{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:520px){
+    .greet h1{font-size:21px;}
+    .search-box{display:none;}
+  }
+</style>
+
+<div id="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* ============================================================
+   CONFIGURAÇÃO DO SUPABASE — troque pelos valores do SEU projeto
+   (Supabase > Project Settings > API > Project URL / anon public key).
+   Veja o passo a passo enviado junto com este arquivo.
+   ============================================================ */
+const SUPABASE_URL = "https://tllsjernrpajejuejpuq.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_t6nqYMTlveF7V1rEuJrG3g_Zd3woeth";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     ICONS
+     ============================================================ */
+  const ICON = {
+    truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h10v9H3z"/><path d="M13 10h4l4 3.2V16h-8"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>',
+    chevLeft: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+    chevRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
+    chevDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+    chevUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>',
+    upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>',
+    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9L2.5 18a1.5 1.5 0 001.3 2.2h16.4a1.5 1.5 0 001.3-2.2L13.7 3.9a1.5 1.5 0 00-2.6 0z"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>',
+    grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+    list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>',
+    gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1.04 1.56V21a2 2 0 11-4 0v-.09a1.7 1.7 0 00-1.04-1.56 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.7 1.7 0 004.6 15a1.7 1.7 0 00-1.56-1.04H3a2 2 0 110-4h.09A1.7 1.7 0 004.6 9a1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06A1.7 1.7 0 009 4.6a1.7 1.7 0 001.04-1.56V3a2 2 0 114 0v.09A1.7 1.7 0 0015 4.6a1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06A1.7 1.7 0 0019.4 9a1.7 1.7 0 001.56 1.04H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.56 1.04z"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+    bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0112 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2 2 0 004 0"/></svg>',
+    dots: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>',
+    box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
+    scale: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M5 7L2 13a3 3 0 006 0L5 7z"/><path d="M19 7l-3 6a3 3 0 006 0l-3-6z"/></svg>',
+    inbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h4l2 3h4l2-3h4"/><path d="M4 12V6a1 1 0 011-1h14a1 1 0 011 1v6"/><path d="M4 12v6a1 1 0 001 1h14a1 1 0 001-1v-6"/></svg>',
+    clockBack: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 109-9"/><path d="M3 4v5h5"/><path d="M12 7v5l4 2"/></svg>',
+    checkCircle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>',
+    hourglass: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12"/><path d="M6 21h12"/><path d="M7 3c0 5 5 6 5 9s-5 4-5 9"/><path d="M17 3c0 5-5 6-5 9s5 4 5 9"/></svg>',
+    building: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="9" height="18"/><rect x="15" y="8" width="5" height="13"/><path d="M7 7h1M7 11h1M7 15h1M10 7h1M10 11h1M10 15h1"/></svg>',
+    calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>',
+    chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 01-8.5 8.5c-1.4 0-2.7-.3-3.9-.9L3 21l1.9-5.6A8.5 8.5 0 1121 11.5z"/></svg>',
+    outbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h4l2-3h4l2 3h4"/><path d="M4 12V6a1 1 0 011-1h14a1 1 0 011 1v6"/><path d="M4 12v6a1 1 0 001 1h14a1 1 0 001-1v-6"/></svg>',
+    trendUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16L16 4"/><path d="M7 4h9v9"/></svg>',
+    trendDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8L16 20"/><path d="M7 20h9v-9"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
+    help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.2 9a2.8 2.8 0 015.4.9c0 1.9-2.6 2.1-2.6 3.6"/><path d="M12 17h.01"/></svg>',
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10v9a1 1 0 001 1h10a1 1 0 001-1v-9"/><path d="M10 20v-6h4v6"/></svg>',
+    arrowUpRight: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><path d="M8 7h9v9"/></svg>',
+    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M8 11l4 4 4-4"/><path d="M4 17v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2"/><path d="M6 7l1 13a1 1 0 001 1h8a1 1 0 001-1l1-13"/><path d="M10 11v6M14 11v6"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.7l7.4-4.2M8.3 13.3l7.4 4.2"/></svg>',
+    linkIcon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 15l6-6"/><path d="M11 6l1-1a4 4 0 015.7 5.7l-1 1"/><path d="M13 18l-1 1A4 4 0 016.3 13.3l1-1"/></svg>',
+  };
+
+  /* ============================================================
+     STATE
+     ============================================================ */
+  let dbReady = false;
+  let currentUser = null;
+  let profileOpen = false;
+  let history = [];          // array of snapshot docs, sorted desc by date
+  let selectedKey = null;    // 'YYYY-MM-DD_periodo'
+  let historyMenuOpen = false;
+  let confirmDeleteKey = null;
+  let currentView = "dashboard"; // "dashboard" | "uploads"
+  let helpOpen = false;
+  let pendingSnapshot = null; // parsed, unconfirmed
+  let parseError = null;
+  let loadsFilter = "";
+  let loadsStatusFilter = ""; // "" | "liberadas"
+  let trancadasTab = "todas"; // todas | grupo | terceiros
+  let dragCounter = 0;
+  let searchHadFocus = false;
+  let searchDebounce = null;
+  let compactMode = false;
+  let collapsed = {trancadas:true, loads:true};
+
+  const WEEKDAY_PT = ["DOMINGO","SEGUNDA","TERÇA","QUARTA","QUINTA","SEXTA","SÁBADO"];
+  const PERIODO_LABEL = {manha:"Manhã", tarde:"Tarde"};
+
+  /* Troque pelo e-mail Google que deve ter permissão de gravação (a única conta
+     que pode enviar planilhas, editar ou excluir). Todo o resto só visualiza. */
+  const OWNER_EMAIL = "diegolemosdev@gmail.com";
+
+  function snapKey(h){ return h.date + "_" + (h.periodo||"manha"); }
+  function isOwner(){ return !!(currentUser && currentUser.email === OWNER_EMAIL); }
+  function signIn(){
+    supabase.auth.signInWithOAuth({ provider: "google" }).then(({error}) => {
+      if(error) alert("Não consegui entrar: " + error.message);
+    });
+  }
+  function signOutUser(){
+    supabase.auth.signOut();
+    profileOpen = false;
+  }
+
+  /* ============================================================
+     HELPERS
+     ============================================================ */
+  function esc(s){
+    return String(s===undefined||s===null ? "" : s).replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+  }
+  function normStr(v){ return (v===undefined||v===null) ? "" : String(v).trim(); }
+  function parseNumberBR(s){
+    s = normStr(s);
+    if(!s) return 0;
+    s = s.replace(/\./g,"").replace(",",".");
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+  function fmtInt(n){ return Number(n||0).toLocaleString("pt-BR"); }
+  function fmtKg(n){
+    n = Number(n||0);
+    if(n >= 1000) return (n/1000).toLocaleString("pt-BR",{maximumFractionDigits:1}) + " t";
+    return n.toLocaleString("pt-BR",{maximumFractionDigits:0}) + " kg";
+  }
+  function fmtDateBR(iso){
+    if(!iso) return "—";
+    const [y,m,d] = iso.split("-");
+    return `${d}/${m}/${y}`;
+  }
+  function fmtDateTimeBR(iso){
+    if(!iso) return "—";
+    const d = new Date(iso);
+    if(isNaN(d.getTime())) return "—";
+    return d.toLocaleDateString("pt-BR") + " às " + d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  }
+  function weekdayLabelFor(iso){
+    const d = new Date(iso+"T12:00:00");
+    if(isNaN(d.getTime())) return "";
+    return WEEKDAY_PT[d.getDay()];
+  }
+  function todayIso(){
+    const d = new Date();
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+  function greetingWord(){
+    const h = new Date().getHours();
+    if(h < 12) return "Bom dia";
+    if(h < 18) return "Boa tarde";
+    return "Boa noite";
+  }
+  function totalPeso(loads){ return (loads||[]).reduce((s,l)=>s+(l.peso||0),0); }
+  function calcDelta(cur, prev){
+    if(prev === undefined || prev === null) return null;
+    cur = Number(cur||0); prev = Number(prev||0);
+    if(prev === 0) return cur === 0 ? 0 : null;
+    return Math.round(((cur-prev)/prev)*100);
+  }
+  function pillDelta(delta, goodWhenUp){
+    if(delta === null || delta === undefined) return "";
+    const isGood = delta === 0 ? null : (goodWhenUp ? delta>0 : delta<0);
+    const cls = isGood === null ? "flat" : (isGood ? "good" : "bad");
+    const sign = delta>0 ? "+" : "";
+    return `<span class="pill-delta ${cls}">${sign}${delta}%</span>`;
+  }
+  function initials(name){
+    const parts = normStr(name).split(/\s+/).filter(Boolean);
+    if(parts.length===0) return "—";
+    if(parts.length===1) return parts[0].slice(0,2).toUpperCase();
+    return (parts[0][0]+parts[1][0]).toUpperCase();
+  }
+
+  /* ============================================================
+     SPREADSHEET PARSER
+     Fixed layout: date cell, load table (header row has "DATA CHEGADA"),
+     summary block ("QTD CARGAS" / "QTD GRUPO/TERCEIROS" / "STATUS ANALISES"),
+     and one or more "CARGAS TRANCADA" sub-tables (GRUPO / TERCEIROS).
+     ============================================================ */
+  function parseReportDate(raw){
+    if(raw instanceof Date && !isNaN(raw.getTime())){
+      return raw.getFullYear()+"-"+String(raw.getMonth()+1).padStart(2,"0")+"-"+String(raw.getDate()).padStart(2,"0");
+    }
+    const s = normStr(raw);
+    if(!s) return null;
+    let m = s.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
+    if(m){
+      let a = parseInt(m[1],10), b = parseInt(m[2],10), y = parseInt(m[3],10);
+      let day, month;
+      if(b > 12){ month = a; day = b; }        // e.g. 8/31/2026
+      else if(a > 12){ day = a; month = b; }   // e.g. 31/08/2026
+      else { day = a; month = b; }             // ambiguous -> assume DD/MM (pt-BR default)
+      return y+"-"+String(month).padStart(2,"0")+"-"+String(day).padStart(2,"0");
+    }
+    m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(m) return s.slice(0,10);
+    return null;
+  }
+
+  function parseWorkbook(workbook){
+    const wsName = workbook.SheetNames[0];
+    const ws = workbook.Sheets[wsName];
+    const aoa = XLSX.utils.sheet_to_json(ws, {header:1, defval:"", raw:false});
+    const c = (row,i) => (row && row[i] !== undefined) ? row[i] : "";
+
+    // 1. header row -> "DATA CHEGADA"
+    const headerIdx = aoa.findIndex(r => normStr(c(r,1)).toUpperCase() === "DATA CHEGADA");
+    if(headerIdx === -1){
+      throw new Error("Não encontrei a linha de cabeçalho da tabela de cargas (coluna \"DATA CHEGADA\"). Verifique se está usando o modelo correto.");
+    }
+
+    // 2. report date: scan the rows above the table header for the first parseable date.
+    // When none is found, fall back to today's date instead of blocking the upload —
+    // the confirmation modal lets the user fix it before saving.
+    let reportDate = null;
+    for(let i=0; i<headerIdx && !reportDate; i++){
+      const row = aoa[i] || [];
+      for(let j=0; j<row.length && !reportDate; j++){
+        reportDate = parseReportDate(row[j]);
+      }
+    }
+    const dateAutoDetected = !!reportDate;
+    if(!reportDate) reportDate = todayIso();
+
+    // 3. load rows
+    const loads = [];
+    let r = headerIdx + 1;
+    while(r < aoa.length){
+      const row = aoa[r];
+      let joined = "";
+      for(let i=0;i<16;i++) joined += normStr(c(row,i));
+      if(joined === "") break;
+      loads.push({
+        seq: normStr(c(row,0)),
+        dataChegada: normStr(c(row,1)),
+        origem: normStr(c(row,2)),
+        sif: normStr(c(row,3)),
+        sifOrigem: normStr(c(row,4)),
+        habilitacao: normStr(c(row,5)),
+        produtos: normStr(c(row,6)),
+        validade: normStr(c(row,7)),
+        placa: normStr(c(row,8)),
+        peso: parseNumberBR(c(row,9)),
+        status: normStr(c(row,10)).toUpperCase(),
+        temp: normStr(c(row,11)),
+        halal: normStr(c(row,12)),
+        csnDcpoa: normStr(c(row,13)),
+        termoGarantia: normStr(c(row,14)),
+        obs: normStr(c(row,15)),
+      });
+      r++;
+    }
+    if(loads.length === 0){
+      throw new Error("Nenhuma carreta encontrada na tabela. Verifique se a planilha tem linhas preenchidas abaixo do cabeçalho.");
+    }
+
+    // 4. summary block (QTD CARGAS / QTD GRUPO-TERCEIROS / STATUS ANALISES)
+    const summary = {anteriorLabel:"", anterior:0, descarregada:0, chegou:0, hoje:0};
+    const statusAnalises = {analisada:0, analisar:0, trancada:0, total:0};
+    const porUnidade = [];
+    let porUnidadeTotal = 0;
+
+    const sumIdx = aoa.findIndex((row,i) => i>headerIdx && row.some(cell => normStr(cell).toUpperCase().includes("QTD CARGAS")));
+    if(sumIdx !== -1){
+      let first = true;
+      let rr = sumIdx+1;
+      while(rr < aoa.length){
+        const row = aoa[rr];
+        const l1 = normStr(c(row,1)), v1 = c(row,2);
+        const l4 = normStr(c(row,4)), v4 = c(row,5);
+        const l7 = normStr(c(row,7)), v7 = c(row,8);
+        if(!l1 && !l4 && !l7) break;
+        if(l1){
+          const lu = l1.toUpperCase();
+          if(lu.includes("DESCARREG")) summary.descarregada = parseNumberBR(v1);
+          else if(lu.includes("CHEGOU")) summary.chegou = parseNumberBR(v1);
+          else if(lu.includes("HOJE")) summary.hoje = parseNumberBR(v1);
+          else if(first){ summary.anteriorLabel = l1; summary.anterior = parseNumberBR(v1); }
+        }
+        if(l1) first = false;
+        if(l4){
+          if(l4.toUpperCase() === "TOTAL") porUnidadeTotal = parseNumberBR(v4);
+          else porUnidade.push({nome:l4, qtd:parseNumberBR(v4)});
+        }
+        if(l7){
+          const lu = l7.toUpperCase();
+          if(lu === "TOTAL") statusAnalises.total = parseNumberBR(v7);
+          else if(lu.includes("ANALISADA")) statusAnalises.analisada = parseNumberBR(v7);
+          else if(lu.includes("ANALISAR")) statusAnalises.analisar = parseNumberBR(v7);
+          else if(lu.includes("TRANCADA")) statusAnalises.trancada = parseNumberBR(v7);
+        }
+        rr++;
+      }
+    }
+
+    // 5. "CARGAS TRANCADA" sub-tables (GRUPO / TERCEIROS)
+    const trancadas = [];
+    aoa.forEach((row,i) => {
+      if(!row.some(cell => normStr(cell).toUpperCase() === "CARGAS TRANCADA")) return;
+      const groupLabel = normStr(c(aoa[i+1], 1)).toUpperCase();
+      const grp = groupLabel === "GRUPO" ? "grupo" : "terceiros";
+      let rr = i+3; // skip section title row + sub-label row + column header row
+      while(rr < aoa.length){
+        const row2 = aoa[rr];
+        const v1 = normStr(c(row2,1)), v2 = normStr(c(row2,2)), v3 = normStr(c(row2,3)), v4 = normStr(c(row2,4));
+        if(!v1 && !v2 && !v3 && !v4) break;
+        if(/^\d+$/.test(v1) && !v2 && !v3 && !v4) break; // trailing count line
+        trancadas.push({grupo:grp, chegada:v1, placa:v2, unidade:v3, status:v4});
+        rr++;
+      }
+    });
+
+    if(!summary.hoje) summary.hoje = loads.filter(l => l.status !== "DESCARREGADA").length;
+    if(!statusAnalises.total) statusAnalises.total = statusAnalises.analisada + statusAnalises.analisar + statusAnalises.trancada;
+
+    return {
+      date: reportDate,
+      dateAutoDetected,
+      periodo: (new Date().getHours() < 13) ? "manha" : "tarde",
+      weekdayLabel: summary.anteriorLabel || weekdayLabelFor(reportDate),
+      uploadedAt: new Date().toISOString(),
+      summary,
+      statusAnalises,
+      porUnidade,
+      porUnidadeTotal,
+      loads,
+      trancadas,
+    };
+  }
+
+  /* ============================================================
+     DB / DATA LAYER
+     ============================================================ */
+  async function fetchHistory(){
+    const {data, error} = await supabase.from("dias").select("data").order("date",{ascending:false}).limit(90);
+    if(error){ console.error("db fetch error", error); render(); return; }
+    history = (data||[]).map(row => row.data);
+    history.sort((a,b) => {
+      if(a.date !== b.date) return a.date < b.date ? 1 : -1;
+      const pa = a.periodo==="tarde" ? 1 : 0, pb = b.periodo==="tarde" ? 1 : 0;
+      return pb - pa;
+    });
+    if(!selectedKey && history.length) selectedKey = snapKey(history[0]);
+    render();
+  }
+
+  function initDb(){
+    dbReady = true;
+    fetchHistory();
+    supabase.channel("dias-changes")
+      .on("postgres_changes", {event:"*", schema:"public", table:"dias"}, fetchHistory)
+      .subscribe();
+    supabase.auth.getSession().then(({data}) => {
+      currentUser = data.session ? data.session.user : null;
+      render();
+    });
+    supabase.auth.onAuthStateChange((event, session) => {
+      currentUser = session ? session.user : null;
+      render();
+    });
+  }
+
+  function findSnapshot(key){
+    return history.find(h => snapKey(h) === key) || null;
+  }
+
+  async function saveSnapshot(snapshot){
+    if(!dbReady || !isOwner()) throw new Error("Somente o administrador pode salvar planilhas.");
+    const key = snapKey(snapshot);
+    const {error} = await supabase.from("dias").upsert({id:key, date:snapshot.date, periodo:snapshot.periodo||"manha", data:snapshot});
+    if(error) throw new Error(error.message);
+    selectedKey = key;
+  }
+
+  async function deleteSnapshot(key){
+    if(!dbReady || !isOwner()) throw new Error("Somente o administrador pode excluir planilhas.");
+    const {error} = await supabase.from("dias").delete().eq("id", key);
+    if(error) throw new Error(error.message);
+  }
+
+  /* ============================================================
+     FILE HANDLING
+     ============================================================ */
+  function handleFiles(fileList){
+    const file = fileList && fileList[0];
+    if(!file) return;
+    if(!isOwner()){
+      parseError = "Somente o administrador (" + OWNER_EMAIL + ") pode enviar planilhas. Entre com essa conta para gravar dados.";
+      render();
+      return;
+    }
+    parseError = null;
+    pendingSnapshot = null;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try{
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, {type:"array", cellDates:true});
+        const snap = parseWorkbook(wb);
+        pendingSnapshot = snap;
+      }catch(err){
+        parseError = err.message || String(err);
+      }
+      render();
+    };
+    reader.onerror = () => { parseError = "Não consegui ler o arquivo. Tente novamente."; render(); };
+    reader.readAsArrayBuffer(file);
+  }
+  function openHiddenInput(){
+    const inp = document.createElement("input");
+    inp.type="file"; inp.accept=".xlsx,.xls,.csv";
+    inp.onchange = e => handleFiles(e.target.files);
+    inp.click();
+  }
+
+  function exportCurrentCsv(){
+    const cur = selectedKey ? findSnapshot(selectedKey) : (history[0] || null);
+    if(!cur) return;
+    const headers = ["Fornecedor","Chegada","SIF","Habilitação","Produto","Placa","Peso (kg)","Status","Temp","Obs."];
+    const rows = (cur.loads||[]).map(l => [
+      l.origem, l.dataChegada, l.sif, l.habilitacao, l.produtos, l.placa,
+      l.peso ? String(l.peso).replace(".",",") : "", l.status, l.temp, l.obs
+    ]);
+    const csvEsc = v => {
+      const s = String(v===undefined||v===null ? "" : v);
+      return /[",;\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+    };
+    const csv = "﻿" + [headers, ...rows].map(r => r.map(csvEsc).join(";")).join("\r\n");
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "cargas_"+snapKey(cur)+".csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  async function shareApp(btn){
+    const url = window.location.href;
+    const originalHtml = btn.innerHTML;
+    const flash = (label) => {
+      btn.innerHTML = `<span>${esc(label)}</span>`;
+      setTimeout(() => { btn.innerHTML = originalHtml; }, 2200);
+    };
+    if(navigator.share){
+      try{
+        await navigator.share({title:"Controle de Carretas", url});
+        return;
+      }catch(e){ /* user cancelled the native share sheet — fall through to copy */ }
+    }
+    try{
+      await navigator.clipboard.writeText(url);
+      flash("Link copiado!");
+    }catch(e){
+      window.prompt("Copie o link para compartilhar:", url);
+    }
+  }
+
+  /* ============================================================
+     SMALL RENDER HELPERS
+     ============================================================ */
+  function statusPill(status){
+    const s = (status||"").toUpperCase();
+    if(s === "ANALISADA") return `<span class="pill pill-good">Analisada</span>`;
+    if(s === "ANALISAR") return `<span class="pill pill-warning">Apta a analisar</span>`;
+    if(s === "TRANCADA") return `<span class="pill pill-critical">Trancada</span>`;
+    if(s === "DESCARREGADA") return `<span class="pill pill-neutral">Descarregada</span>`;
+    return `<span class="pill pill-neutral">${esc(status||"—")}</span>`;
+  }
+
+  function barsChart(rows, opts){
+    const max = opts && opts.max ? opts.max : Math.max(1, ...rows.map(r=>r.value));
+    const valueFmt = (opts && opts.valueFmt) || fmtInt;
+    return `<div class="bars">` + rows.map((r,i) => {
+      const pct = max ? Math.max(2, Math.round((r.value/max)*100)) : 0;
+      return `<div class="bar-row">
+        <div class="b-label" title="${esc(r.label)}">${esc(r.label)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="${i===0?'b-value-badge':'b-value'}">${valueFmt(r.value)}</div>
+      </div>`;
+    }).join("") + `</div>`;
+  }
+  function fmtKgPlain(n){ return Number(n||0).toLocaleString("pt-BR",{maximumFractionDigits:0}) + " kg"; }
+
+
+  /* ============================================================
+     RENDER: header
+     ============================================================ */
+  function renderHeader(cur){
+    const trancCount = cur && cur.statusAnalises ? cur.statusAnalises.trancada : 0;
+    return `<div class="util-row">
+      <label class="search-box">
+        ${ICON.search}
+        <input id="headerSearch" placeholder="Buscar placa, fornecedor, produto…" value="${esc(loadsFilter)}"/>
+      </label>
+      <div class="head-actions">
+        <button class="notif-btn" id="btnBell" title="Cargas trancadas">
+          <span class="nb-icon">${ICON.bell}</span>
+          <span>Trancadas</span>
+          <span class="nb-count">${fmtInt(trancCount)}</span>
+        </button>
+        <div style="position:relative;">
+          <button class="avatar-mark" id="btnAvatar" title="${currentUser ? esc(currentUser.email) : 'Entrar como administrador'}">
+            ${ICON.truck}${currentUser ? '<span class="avatar-dot"></span>' : ""}
+          </button>
+          ${profileOpen && currentUser ? `<div class="popover">
+            <h4>${isOwner() ? "Administrador" : "Conta conectada"}</h4>
+            <div style="font-size:12px; color:var(--ink-muted); word-break:break-all;">${esc(currentUser.email)}</div>
+            ${!isOwner() ? `<div style="font-size:11.5px; color:var(--warning); margin-top:8px;">Essa conta não tem permissão para gravar dados — apenas ${esc(OWNER_EMAIL)} pode.</div>` : ""}
+            <div class="switch-row" style="justify-content:center;">
+              <button class="btn btn-ghost" id="btnSignOut" style="width:100%;">Sair</button>
+            </div>
+          </div>` : ""}
+        </div>
+      </div>
+    </div>
+    <div class="title-row">
+      <div class="greet">
+        <h1>${greetingWord()}, confira o pátio de hoje</h1>
+      </div>
+      <div class="title-controls">
+        <div style="position:relative;">
+          <button class="pill-btn" id="btnHistory">
+            <span class="pb-icon">${ICON.calendar}</span>
+            <div>
+              <div class="pb-label">Relatório</div>
+              <div class="pb-value">${cur ? fmtDateBR(cur.date) : "Nenhum envio"}</div>
+            </div>
+            <span class="pb-chev">${ICON.chevDown}</span>
+          </button>
+          ${historyMenuOpen ? renderHistoryMenu() : ""}
+        </div>
+        <button class="btn-share" id="btnShare" title="Copiar link para compartilhar (somente visualização)">${ICON.share}<span>Compartilhar</span></button>
+        <button class="btn-black" id="btnExportCsv" ${cur?"":"disabled"} title="Exportar cargas do dia em CSV">${ICON.download}<span>Exportar CSV</span></button>
+      </div>
+    </div>`;
+  }
+
+  function renderHistoryMenu(){
+    const items = history.length ? history.map(h => {
+      const key = snapKey(h);
+      const trancCount = h.statusAnalises ? h.statusAnalises.trancada : 0;
+      const periodoLabel = PERIODO_LABEL[h.periodo] || PERIODO_LABEL.manha;
+      if(confirmDeleteKey === key){
+        return `<div class="hm-row hm-confirm">
+          <span>Excluir envio de ${fmtDateBR(h.date)} · ${periodoLabel}?</span>
+          <div class="hm-confirm-actions">
+            <button class="hm-confirm-no" data-del-no="1">Cancelar</button>
+            <button class="hm-confirm-yes" data-del-yes="${key}">Excluir</button>
+          </div>
+        </div>`;
+      }
+      return `<div class="hm-row">
+        <button data-key="${key}" class="hm-main ${key===selectedKey?'active':''}">
+          <span class="hm-date">${fmtDateBR(h.date)} <span class="hm-periodo">${periodoLabel}</span></span>
+          <span class="hm-meta">${fmtInt(h.summary?h.summary.hoje:0)} cargas${trancCount?` · ${trancCount} trancadas`:""}</span>
+        </button>
+        ${isOwner() ? `<button class="hm-del" data-del="${key}" title="Excluir este envio">${ICON.trash}</button>` : ""}
+      </div>`;
+    }).join("") : `<div class="hm-empty">Nenhum dia enviado ainda. Envie a planilha pelo ícone de upload na barra lateral.</div>`;
+    return `<div class="history-menu" id="historyMenu">
+      <div class="hm-title">Planilhas enviadas</div>
+      ${items}
+    </div>`;
+  }
+
+  /* ============================================================
+     RENDER: sidebar
+     ============================================================ */
+  function renderSidebar(){
+    return `<aside class="sidebar">
+      <button class="side-logo" id="btnScrollTop" title="Voltar ao topo">${ICON.truck}</button>
+      <nav class="side-nav">
+        <button class="side-item ${currentView==='dashboard'?'active':''}" id="navDashboard" title="Início">${ICON.home}</button>
+        <button class="side-item" id="btnSideUpload" title="Enviar planilha">${ICON.upload}</button>
+        <button class="side-item ${currentView==='uploads'?'active':''}" id="navUploads" title="Histórico de envios">${ICON.clockBack}</button>
+        <button class="side-item" id="navTrancadas" title="Cargas trancadas">${ICON.lock}</button>
+        <button class="side-item" id="navLoads" title="Todas as cargas">${ICON.list}</button>
+      </nav>
+      <div class="side-bottom">
+        <div style="position:relative;">
+          <button class="side-item" id="btnHelpSide" title="Ajuda">${ICON.help}</button>
+          ${helpOpen ? `<div class="popover pop-side"><h4>Como usar</h4><ul>
+            <li>Arraste a planilha do dia em qualquer lugar da tela, ou clique no ícone de upload.</li>
+            <li>Confira o resumo detectado e confirme para salvar.</li>
+            <li>Use o calendário para ver dias anteriores.</li>
+          </ul></div>` : ""}
+        </div>
+        <button class="side-item ${compactMode?'active':''}" id="btnCompactSide" title="Densidade compacta">${ICON.gear}</button>
+      </div>
+    </aside>`;
+  }
+
+  function renderMobileTabbar(){
+    return `<nav class="mobile-tabbar">
+      <button class="mt-item ${currentView==='dashboard'?'active':''}" id="mtDashboard" title="Início">${ICON.home}</button>
+      <button class="mt-item" id="mtTrancadas" title="Cargas trancadas">${ICON.lock}</button>
+      <button class="mt-fab" id="mtUpload" title="Enviar planilha">${ICON.upload}</button>
+      <button class="mt-item" id="mtLoads" title="Todas as cargas">${ICON.list}</button>
+      <button class="mt-item ${currentView==='uploads'?'active':''}" id="mtUploadsPage" title="Histórico de envios">${ICON.clockBack}</button>
+    </nav>`;
+  }
+
+  /* ============================================================
+     RENDER: main content pieces
+     ============================================================ */
+  function trendPill(delta){
+    if(delta === null || delta === undefined || delta === 0) return "";
+    const up = delta > 0;
+    return `<span class="kt-trend ${up?'up':'down'}">${up?ICON.trendUp:ICON.trendDown}<span>${up?"+":""}${delta}%</span></span>`;
+  }
+
+  function sameWeekdayLastWeek(dateIso){
+    const d = new Date(dateIso+"T12:00:00");
+    d.setDate(d.getDate()-7);
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
+
+  function weekCompareLine(cur, curVal, extractFn, fmtVal){
+    fmtVal = fmtVal || fmtInt;
+    const targetIso = sameWeekdayLastWeek(cur.date);
+    const match = history.find(h => h.date === targetIso);
+    if(!match) return `<div class="stat-compare muted">Sem dado de ${esc((cur.weekdayLabel||weekdayLabelFor(cur.date)||"").toLowerCase())} passada para comparar</div>`;
+    const prevVal = extractFn(match);
+    const diff = curVal - prevVal;
+    const pct = prevVal === 0 ? (curVal===0 ? 0 : null) : Math.round((diff/prevVal)*100);
+    const up = diff > 0, down = diff < 0;
+    const color = up ? "var(--good)" : down ? "var(--critical)" : "rgba(255,255,255,.65)";
+    const icon = up ? ICON.trendUp : down ? ICON.trendDown : "";
+    const sign = up ? "+" : down ? "-" : "";
+    const pctTxt = pct === null ? "" : ` (${sign}${Math.abs(pct)}%)`;
+    const wd = esc((cur.weekdayLabel||weekdayLabelFor(cur.date)||"").toLowerCase());
+    return `<div class="stat-compare" style="color:${color}">${icon}<span>${sign}${fmtVal(Math.abs(diff))}${pctTxt} vs ${wd} passada</span></div>`;
+  }
+
+  function kpiTile(it){
+    return `<div class="kpi-tile">
+      <div class="kt-top">
+        <div class="kt-label">${it.label}</div>
+        <span class="tile-badge">${ICON.arrowUpRight}</span>
+      </div>
+      <div class="kt-value">${it.value}</div>
+      ${it.trend||""}
+    </div>`;
+  }
+
+  function kpiSection(title, items){
+    return `<div class="kpi-section">
+      <div class="kpi-section-label">${esc(title)}</div>
+      <div class="kpi-row">${items.map(kpiTile).join("")}</div>
+    </div>`;
+  }
+
+  function renderKpis(cur){
+    const s = cur.summary || {};
+    const idx = history.findIndex(h=>snapKey(h)===snapKey(cur));
+    const prev = idx!==-1 ? history[idx+1] : null;
+    const items = [
+      {value:fmtInt(s.anterior), label:`Carretas do dia ${esc((s.anteriorLabel||"anterior").toLowerCase())}`,
+        trend: trendPill(prev ? calcDelta(s.anterior, prev.summary && prev.summary.anterior) : null)},
+      {value:fmtInt(s.descarregada), label:"Descarga",
+        trend: trendPill(prev ? calcDelta(s.descarregada, prev.summary && prev.summary.descarregada) : null)},
+      {value:fmtInt(s.chegou), label:"Chegaram",
+        trend: trendPill(prev ? calcDelta(s.chegou, prev.summary && prev.summary.chegou) : null)},
+    ];
+    return kpiSection("Quantidade de cargas", items);
+  }
+
+  function renderStatusKpis(cur){
+    const sa = cur.statusAnalises || {analisada:0,analisar:0,trancada:0,total:0};
+    const idx = history.findIndex(h=>snapKey(h)===snapKey(cur));
+    const prev = idx!==-1 ? history[idx+1] : null;
+    const items = [
+      {value:fmtInt(sa.analisada), label:"Cargas analisadas",
+        trend: trendPill(prev ? calcDelta(sa.analisada, prev.statusAnalises && prev.statusAnalises.analisada) : null)},
+      {value:fmtInt(sa.analisar), label:"Apta a analisar",
+        trend: trendPill(prev ? calcDelta(sa.analisar, prev.statusAnalises && prev.statusAnalises.analisar) : null)},
+      {value:fmtInt(sa.trancada), label:"Trancadas",
+        trend: trendPill(prev ? calcDelta(sa.trancada, prev.statusAnalises && prev.statusAnalises.trancada) : null)},
+    ];
+    return kpiSection("Status das cargas para análise", items);
+  }
+
+  function renderTotalPesoStack(cur){
+    const idx = history.findIndex(h=>snapKey(h)===snapKey(cur));
+    const prev = idx!==-1 ? history[idx+1] : null;
+    const dHoje = prev ? calcDelta(cur.summary.hoje, prev.summary && prev.summary.hoje) : null;
+    const peso = totalPeso(cur.loads);
+    const pesoPrev = prev ? totalPeso(prev.loads) : null;
+    const dPeso = prev ? calcDelta(peso, pesoPrev) : null;
+
+    return `<div class="stat-stack">
+      <div class="stat-card dark">
+        <div class="kt-top"><div class="stat-label" style="margin-bottom:0;">Total de cargas na unidade</div><span class="tile-badge">${ICON.arrowUpRight}</span></div>
+        <div class="stat-row" style="margin-top:11px;"><div class="stat-value">${fmtInt(cur.summary.hoje)}</div>${pillDelta(dHoje, false)}</div>
+        ${weekCompareLine(cur, cur.summary.hoje, h => (h.summary && h.summary.hoje) || 0, fmtInt)}
+      </div>
+      <div class="stat-card dark">
+        <div class="kt-top"><div class="stat-label" style="margin-bottom:0;">Peso recebido</div><span class="tile-badge">${ICON.arrowUpRight}</span></div>
+        <div class="stat-row" style="margin-top:11px;"><div class="stat-value">${fmtKg(peso)}</div>${pillDelta(dPeso, true)}</div>
+        ${weekCompareLine(cur, peso, h => totalPeso(h.loads), fmtKg)}
+      </div>
+    </div>`;
+  }
+
+  function renderChartCard(cur){
+    const unidades = (cur.porUnidade||[]).slice().sort((a,b)=>b.qtd-a.qtd);
+    const top = unidades.slice(0,8);
+    const restQtd = unidades.slice(8).reduce((s,u)=>s+u.qtd,0);
+    const rows = top.map(u => ({label:u.nome, value:u.qtd}));
+    if(restQtd>0) rows.push({label:"Outros", value:restQtd});
+    return `<div class="card">
+      <div class="card-head">
+        <h3>Fornecedores no pátio</h3>
+        <span class="hint">${fmtInt(cur.porUnidadeTotal||0)} carretas no total</span>
+      </div>
+      ${rows.length ? barsChart(rows) : `<div class="empty-note">Sem dados de fornecedor.</div>`}
+    </div>`;
+  }
+
+  function groupByProduto(cur){
+    const byProduto = new Map();
+    (cur.loads||[]).forEach(l => {
+      if(l.status === "DESCARREGADA") return;
+      const nome = (l.produtos||"—").trim() || "—";
+      byProduto.set(nome, (byProduto.get(nome)||0) + (l.peso||0));
+    });
+    return Array.from(byProduto, ([nome,peso]) => ({nome,peso})).sort((a,b)=>b.peso-a.peso);
+  }
+
+  function renderProdutosChart(cur){
+    const produtos = groupByProduto(cur);
+    const total = produtos.reduce((s,p)=>s+p.peso,0);
+    const top = produtos.slice(0,8);
+    const restPeso = produtos.slice(8).reduce((s,p)=>s+p.peso,0);
+    const rows = top.map(p => ({label:p.nome, value:p.peso}));
+    if(restPeso>0) rows.push({label:"Outros", value:restPeso});
+    return `<div class="card">
+      <div class="card-head">
+        <h3>Produtos por peso</h3>
+        <span class="hint">${fmtKgPlain(total)} no total</span>
+      </div>
+      ${rows.length ? barsChart(rows, {valueFmt: fmtKgPlain}) : `<div class="empty-note">Sem dados de produto.</div>`}
+    </div>`;
+  }
+
+  function renderRecentTrancadas(cur){
+    const descarregadasPlacas = new Set(
+      (cur.loads||[]).filter(l => l.status === "DESCARREGADA").map(l => l.placa)
+    );
+    const all = (cur.trancadas || []).filter(t => !descarregadasPlacas.has(t.placa));
+    const groups = [];
+    const byUnidade = new Map();
+    all.forEach(t => {
+      const key = t.unidade || "—";
+      if(!byUnidade.has(key)){
+        const g = {unidade:key, count:0, chegada:t.chegada, motivos:new Set()};
+        byUnidade.set(key, g);
+        groups.push(g);
+      }
+      const g = byUnidade.get(key);
+      g.count++;
+      g.motivos.add(t.status);
+      if(t.chegada > g.chegada) g.chegada = t.chegada;
+    });
+
+    return `<div class="card">
+      <div class="card-head"><h3>Cargas trancadas recentes</h3><span class="hint">${fmtInt(all.length)} no total</span></div>
+      <div class="list-rows">
+        ${groups.length ? groups.map(g => {
+          const motivosArr = Array.from(g.motivos);
+          const sub = g.count > 1
+            ? `${fmtInt(g.count)} carretas${motivosArr.length===1 ? " · "+esc(motivosArr[0]) : " · motivos diversos"}`
+            : esc(motivosArr[0]);
+          return `
+          <div class="list-row list-row-clickable" data-goto-trancadas="1">
+            <div class="lr-body">
+              <div class="lr-title">${esc(g.unidade)}</div>
+              <div class="lr-sub">${sub}</div>
+            </div>
+            <div class="lr-right">${esc(g.chegada)}</div>
+          </div>`;
+        }).join("") : `<div class="empty-note">Nenhuma carga trancada hoje.</div>`}
+      </div>
+    </div>`;
+  }
+
+  function renderSideColumn(cur){
+    const sa = cur.statusAnalises || {analisada:0,analisar:0,trancada:0,total:0};
+    const okCount = sa.analisada + sa.analisar;
+    const pct = sa.total ? Math.round((okCount/sa.total)*100) : 0;
+    const topProdutos = groupByProduto(cur).slice(0,3);
+    const maxPeso = Math.max(1, ...topProdutos.map(p=>p.peso));
+
+    return `<div class="col-side">
+      <div class="dark-card">
+        <h3>Status Cargas</h3>
+        <div class="ds">${pct}% das cargas está apta a analisar ou analisada</div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="progress-caption"><b>${fmtInt(okCount)}</b> de ${fmtInt(sa.total)} carretas aptas a analisar e liberadas</div>
+        <button class="btn-white" id="btnGoLiberadas">Ver cargas liberadas</button>
+      </div>
+      ${topProdutos.length ? `<div class="highlight-card">
+        <div class="highlight-top"><span class="highlight-dot"></span><span class="highlight-title">Maiores volumes do dia</span></div>
+        <div class="hbars">
+          ${topProdutos.map(p => {
+            const w = Math.max(4, Math.round((p.peso/maxPeso)*100));
+            return `<div class="hbar-row">
+              <div class="hbar-label" title="${esc(p.nome)}">${esc(p.nome)}</div>
+              <div class="hbar-track"><div class="hbar-fill" style="width:${w}%"></div></div>
+              <div class="hbar-value">${fmtKgPlain(p.peso)}</div>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>` : ""}
+    </div>`;
+  }
+
+  function sectionWrap(key, iconSvg, title, hint, bodyHtml){
+    const isCollapsed = !!collapsed[key];
+    return `<section class="section" id="sec-${key}">
+      <div class="section-head ${isCollapsed?'collapsed':''}" data-sec="${key}">
+        <h2>
+          <span class="sec-title-row"><span class="sec-icon">${iconSvg}</span>${esc(title)}</span>
+          ${hint ? `<span class="sec-hint">${hint}</span>` : ""}
+        </h2>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="section-chevron">${ICON.chevDown}</span>
+        </div>
+      </div>
+      ${isCollapsed ? "" : bodyHtml}
+    </section>`;
+  }
+
+  function renderTrancadasFull(cur){
+    let rows = cur.trancadas || [];
+    if(trancadasTab !== "todas") rows = rows.filter(t => t.grupo === trancadasTab);
+    const nGrupo = (cur.trancadas||[]).filter(t=>t.grupo==="grupo").length;
+    const nTerc = (cur.trancadas||[]).filter(t=>t.grupo==="terceiros").length;
+    const body = rows.length ? rows.map(t => `
+      <tr>
+        <td><div class="row-lead"><span class="avatar-chip">${ICON.lock}</span><span class="strong">${esc(t.unidade)}</span></div></td>
+        <td class="mono">${esc(t.placa)}</td>
+        <td>${esc(t.chegada)}</td>
+        <td><span class="pill pill-neutral">${t.grupo==='grupo'?'Grupo':'Terceiros'}</span></td>
+        <td>${esc(t.status)}</td>
+      </tr>`).join("") : `<tr><td colspan="5"><div class="empty-note">Nenhuma carga trancada neste filtro.</div></td></tr>`;
+    return `<div class="card">
+      <div class="toggle-row">
+        <button class="toggle-btn ${trancadasTab==='todas'?'active':''}" data-tab="todas">Todas (${(cur.trancadas||[]).length})</button>
+        <button class="toggle-btn ${trancadasTab==='grupo'?'active':''}" data-tab="grupo">Grupo (${nGrupo})</button>
+        <button class="toggle-btn ${trancadasTab==='terceiros'?'active':''}" data-tab="terceiros">Terceiros (${nTerc})</button>
+      </div>
+      <div class="table-scroll"><table>
+        <thead><tr><th>Unidade / fornecedor</th><th>Placa</th><th>Chegada</th><th>Origem</th><th>Motivo</th></tr></thead>
+        <tbody>${body}</tbody>
+      </table></div>
+    </div>`;
+  }
+
+  function renderLoadsFull(cur){
+    const all = cur.loads || [];
+    let rows = all;
+    if(loadsStatusFilter === "liberadas"){
+      rows = rows.filter(l => l.status === "ANALISADA" || l.status === "ANALISAR");
+    } else if(loadsStatusFilter){
+      rows = rows.filter(l => l.status === loadsStatusFilter);
+    }
+    if(loadsFilter.trim()){
+      const q = loadsFilter.trim().toUpperCase();
+      rows = rows.filter(l => (l.placa+" "+l.origem+" "+l.produtos+" "+l.sif).toUpperCase().includes(q));
+    }
+    const countStatus = st => all.filter(l => l.status === st).length;
+    const countLiberadas = all.filter(l => l.status === "ANALISADA" || l.status === "ANALISAR").length;
+    const tabs = [
+      {key:"", label:"Todas", n: all.length},
+      {key:"liberadas", label:"Liberadas", n: countLiberadas},
+      {key:"ANALISADA", label:"Analisada", n: countStatus("ANALISADA")},
+      {key:"ANALISAR", label:"Apta a analisar", n: countStatus("ANALISAR")},
+      {key:"TRANCADA", label:"Trancada", n: countStatus("TRANCADA")},
+      {key:"DESCARREGADA", label:"Descarregada", n: countStatus("DESCARREGADA")},
+    ];
+    const tabsHtml = `<div class="toggle-row" style="flex-wrap:wrap;">
+      ${tabs.map(t => `<button class="toggle-btn ${loadsStatusFilter===t.key?'active':''}" data-loads-status="${t.key}">${esc(t.label)} (${fmtInt(t.n)})</button>`).join("")}
+    </div>`;
+    const filterChip = loadsStatusFilter === "liberadas" ? `
+      <div class="filter-chip-row">
+        <span class="filter-chip">Apenas liberadas (apta a analisar + analisada)</span>
+        <button class="filter-chip-clear" id="btnClearLoadsStatusFilter">Limpar filtro</button>
+      </div>` : "";
+    const body = rows.length ? rows.map(l => {
+      const isTrancada = l.status === "TRANCADA";
+      return `
+      <tr>
+        <td><div class="row-lead"><span class="avatar-chip building">${esc(initials(l.origem))}</span><span class="strong">${esc(l.origem)}</span></div></td>
+        <td>${esc(l.dataChegada)}</td>
+        <td>${esc(l.sif)}</td>
+        <td>${esc(l.habilitacao)}</td>
+        <td>${esc(l.produtos)}</td>
+        <td class="mono">${esc(l.placa)}</td>
+        <td class="mono tabular">${l.peso ? l.peso.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}) : "—"}</td>
+        <td>${statusPill(l.status)}</td>
+        <td>${esc(l.temp)}</td>
+        <td>${isTrancada && l.obs ? `<span class="motivo-tag">Motivo</span>${esc(l.obs)}` : esc(l.obs)}</td>
+      </tr>`;
+    }).join("") : `<tr><td colspan="10"><div class="empty-note">Nenhuma carreta encontrada neste filtro.</div></td></tr>`;
+    return filterChip + `<div class="card">
+      ${tabsHtml}
+      <div class="table-scroll"><table>
+        <thead><tr>
+          <th>Fornecedor</th><th>Chegada</th><th>SIF</th><th>Habilitação</th>
+          <th>Produto</th><th>Placa</th><th>Peso (kg)</th><th>Status</th><th>Temp</th><th>Obs. / Motivo</th>
+        </tr></thead>
+        <tbody>${body}</tbody>
+      </table></div>
+    </div>`;
+  }
+
+  function renderUploadsPage(){
+    const rows = history.map(h => {
+      const key = snapKey(h);
+      const periodoLabel = PERIODO_LABEL[h.periodo] || PERIODO_LABEL.manha;
+      const trancCount = h.statusAnalises ? h.statusAnalises.trancada : 0;
+      if(confirmDeleteKey === key){
+        return `<div class="upload-row">
+          <div class="upload-row-confirm">
+            <span>Excluir o envio de ${fmtDateBR(h.date)} · ${periodoLabel}? Essa ação não pode ser desfeita.</span>
+            <div class="hm-confirm-actions">
+              <button class="hm-confirm-no" data-del-no="1">Cancelar</button>
+              <button class="hm-confirm-yes" data-del-yes="${key}">Excluir</button>
+            </div>
+          </div>
+        </div>`;
+      }
+      return `<div class="upload-row ${key===selectedKey?'is-current':''}">
+        <div class="upload-row-main">
+          <div class="upload-row-date">${fmtDateBR(h.date)} <span class="hm-periodo">${periodoLabel}</span></div>
+          <div class="upload-row-meta">${esc((h.weekdayLabel||weekdayLabelFor(h.date)||"").toLowerCase())} · enviado em ${fmtDateTimeBR(h.uploadedAt)}</div>
+        </div>
+        <div class="upload-row-stats">
+          <div><b>${fmtInt(h.summary?h.summary.hoje:0)}</b>cargas</div>
+          <div><b>${fmtInt(trancCount)}</b>trancadas</div>
+        </div>
+        <div class="upload-row-actions">
+          <button class="btn btn-ghost" data-view-key="${key}">Ver no painel</button>
+          <button class="btn btn-danger" data-del="${key}" ${isOwner()?"":"disabled"} title="${isOwner()?"Excluir este envio":"Somente o administrador pode excluir"}">Excluir</button>
+        </div>
+      </div>`;
+    }).join("");
+    return `<div class="uploads-page">
+      <div class="uploads-page-head">
+        <div>
+          <h1>Histórico de envios</h1>
+          <div class="m-sub">Todas as planilhas já enviadas, por dia e período. Envie uma nova, reenvie um dia corrigido ou exclua um envio.</div>
+        </div>
+        <button class="btn-black" id="btnUploadsPageUpload" ${isOwner()?"":"disabled"} title="${isOwner()?"Enviar nova planilha":"Somente o administrador pode enviar planilhas"}">${ICON.plus}<span>Enviar nova planilha</span></button>
+      </div>
+      <div class="uploads-list">
+        ${history.length ? rows : `<div class="empty-note" style="padding:40px 0;">Nenhuma planilha enviada ainda.</div>`}
+      </div>
+    </div>`;
+  }
+
+  function renderUploadModal(){
+    if(!pendingSnapshot && !parseError) return "";
+    const s = pendingSnapshot;
+    const existing = s ? findSnapshot(snapKey(s)) : null;
+    const periodo = s ? (s.periodo || "manha") : "manha";
+    return `<div class="overlay" id="uploadOverlay">
+      <div class="modal">
+        ${parseError ? `
+          <h3>Não consegui ler essa planilha</h3>
+          <div class="m-sub">Confira o arquivo e tente novamente.</div>
+          <div class="parse-error">${esc(parseError)}</div>
+          <div class="modal-actions">
+            <button class="btn btn-ghost" id="btnCancelUpload">Fechar</button>
+          </div>
+        ` : `
+          <h3>Confirmar envio do dia</h3>
+          <div class="m-sub">Confira os dados detectados antes de salvar.</div>
+          ${!s.dateAutoDetected ? `<div class="conflict-note warn">${ICON.warn}<span>Não consegui detectar a data automaticamente nesta planilha — confira o campo abaixo antes de salvar.</span></div>` : ""}
+          <div class="field-row">
+            <label>Data do relatório</label>
+            <div style="display:flex; gap:8px;">
+              <input type="date" id="confirmDate" value="${esc(s.date)}" style="flex:1;"/>
+              <button type="button" class="btn btn-ghost" id="btnUseToday">Usar hoje</button>
+            </div>
+          </div>
+          <div class="field-row">
+            <label>Período</label>
+            <div class="toggle-row" style="margin-bottom:0;">
+              <button type="button" class="toggle-btn ${periodo==='manha'?'active':''}" data-periodo="manha">Manhã</button>
+              <button type="button" class="toggle-btn ${periodo==='tarde'?'active':''}" data-periodo="tarde">Tarde</button>
+            </div>
+          </div>
+          ${existing ? `<div class="conflict-note">${ICON.warn}<span>Já existe um envio salvo para ${fmtDateBR(s.date)} · ${PERIODO_LABEL[periodo]} (${fmtInt(existing.summary?existing.summary.hoje:0)} cargas). Salvar agora vai <strong>substituir</strong> esse registro — use isso para reenviar um dia corrigido, ou para atualizar um envio já feito no mesmo período.</span></div>` : ""}
+          <div class="preview-grid">
+            <div class="preview-tile"><div class="pv">${fmtInt(s.summary.hoje)}</div><div class="pl">Total hoje</div></div>
+            <div class="preview-tile"><div class="pv">${fmtInt(s.summary.chegou)}</div><div class="pl">Chegaram</div></div>
+            <div class="preview-tile"><div class="pv">${fmtInt(s.statusAnalises.trancada)}</div><div class="pl">Trancadas</div></div>
+            <div class="preview-tile"><div class="pv">${fmtInt(s.loads.length)}</div><div class="pl">Carretas na planilha</div></div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-ghost" id="btnCancelUpload">Cancelar</button>
+            <button class="btn ${existing?'btn-danger':'btn-primary'}" id="btnConfirmUpload">${existing ? "Substituir e salvar" : "Salvar dia"}</button>
+          </div>
+        `}
+      </div>
+    </div>`;
+  }
+
+  function renderReadOnlyBanner(){
+    if(!dbReady) return "";
+    if(isOwner()) return "";
+    return `<div class="banner">${ICON.warn}<span>Modo visualização — você está vendo o painel em tempo real, mas só ${esc(OWNER_EMAIL)} pode enviar, editar ou excluir planilhas.</span></div>`;
+  }
+
+  /* ============================================================
+     ROOT RENDER
+     ============================================================ */
+  function render(){
+    const cur = selectedKey ? findSnapshot(selectedKey) : (history[0] || null);
+    const idx = history.findIndex(h=>snapKey(h)===selectedKey);
+    const canPrev = idx !== -1 && idx < history.length-1;
+    const canNext = idx > 0;
+    const app = document.getElementById("app");
+    app.innerHTML = `
+    <div class="shell ${compactMode?'compact':''}">
+      ${renderSidebar()}
+      <div class="main" id="mainScroll">
+        <div class="main-inner">
+          ${renderHeader(cur)}
+          ${renderReadOnlyBanner()}
+          ${currentView === "uploads" ? renderUploadsPage() : (!cur ? `<div class="empty-note" style="padding:40px 0;">Envie a planilha do dia pelo ícone de upload na barra lateral para começar a acompanhar o pátio.</div>` : `
+            <div class="pager-row">
+              <button class="pager-btn" id="btnPrevDay" ${canPrev?"":"disabled"} title="Dia anterior">${ICON.chevLeft}</button>
+              <button class="pager-btn" id="btnNextDay" ${canNext?"":"disabled"} title="Próximo dia">${ICON.chevRight}</button>
+            </div>
+            <div class="grid-3 kpi-blocks-row" style="margin-bottom:16px;">
+              <div>${renderKpis(cur)}</div>
+              <div>${renderStatusKpis(cur)}</div>
+              <div>${renderTotalPesoStack(cur)}</div>
+            </div>
+            <div class="grid-main-side">
+              ${renderChartCard(cur)}
+              ${renderRecentTrancadas(cur)}
+            </div>
+            <div class="grid-main-side">
+              ${renderProdutosChart(cur)}
+              ${renderSideColumn(cur)}
+            </div>
+            ${sectionWrap("trancadas", ICON.lock, "Todas as cargas trancadas", `${fmtInt((cur.trancadas||[]).length)} no total`, renderTrancadasFull(cur))}
+            ${sectionWrap("loads", ICON.list, "Todas as cargas do dia", `${fmtInt((cur.loads||[]).length)} carretas · ${fmtKg(totalPeso(cur.loads))}`, renderLoadsFull(cur))}
+          `)}
+          ${renderUploadModal()}
+          <footer>Controle de Carretas · dados enviados diariamente pela equipe, salvos automaticamente.</footer>
+        </div>
+      </div>
+      ${renderMobileTabbar()}
+    </div>`;
+    bindEvents();
+  }
+
+  /* ============================================================
+     EVENTS
+     ============================================================ */
+  function bindEvents(){
+    const $ = sel => document.querySelector(sel);
+
+    const btnSideUpload = $("#btnSideUpload");
+    if(btnSideUpload) btnSideUpload.onclick = () => openHiddenInput();
+    const btnUploadsPageUpload = $("#btnUploadsPageUpload");
+    if(btnUploadsPageUpload) btnUploadsPageUpload.onclick = () => openHiddenInput();
+    const btnCompactSide = $("#btnCompactSide");
+    if(btnCompactSide) btnCompactSide.onclick = (e) => { e.stopPropagation(); compactMode = !compactMode; render(); };
+
+    const btnScrollTop = $("#btnScrollTop");
+    if(btnScrollTop) btnScrollTop.onclick = () => { const m=$("#mainScroll"); if(m) m.scrollTo({top:0, behavior:"smooth"}); };
+
+    const navDashboard = $("#navDashboard"), navUploads = $("#navUploads");
+    if(navDashboard) navDashboard.onclick = () => { currentView = "dashboard"; render(); };
+    if(navUploads) navUploads.onclick = () => { currentView = "uploads"; render(); };
+    const mtDashboard = $("#mtDashboard"), mtUploadsPage = $("#mtUploadsPage"), mtUpload = $("#mtUpload");
+    if(mtDashboard) mtDashboard.onclick = () => { currentView = "dashboard"; render(); };
+    if(mtUploadsPage) mtUploadsPage.onclick = () => { currentView = "uploads"; render(); };
+    if(mtUpload) mtUpload.onclick = () => openHiddenInput();
+    document.querySelectorAll("button[data-view-key]").forEach(b => {
+      b.onclick = () => { selectedKey = b.getAttribute("data-view-key"); currentView = "dashboard"; render(); };
+    });
+
+    const navTrancadas = $("#navTrancadas"), navLoads = $("#navLoads"), btnGoLiberadas = $("#btnGoLiberadas");
+    function goSection(key){
+      currentView = "dashboard"; collapsed[key] = false; render();
+      document.getElementById("sec-"+key)?.scrollIntoView({behavior:"smooth", block:"start"});
+    }
+    if(navTrancadas) navTrancadas.onclick = () => goSection("trancadas");
+    if(navLoads) navLoads.onclick = () => { loadsStatusFilter = ""; goSection("loads"); };
+    if(btnGoLiberadas) btnGoLiberadas.onclick = () => { loadsStatusFilter = "liberadas"; goSection("loads"); };
+    const mtTrancadas = $("#mtTrancadas"), mtLoads = $("#mtLoads");
+    if(mtTrancadas) mtTrancadas.onclick = () => goSection("trancadas");
+    if(mtLoads) mtLoads.onclick = () => { loadsStatusFilter = ""; goSection("loads"); };
+    document.querySelectorAll("[data-goto-trancadas]").forEach(el => {
+      el.onclick = () => goSection("trancadas");
+    });
+    const btnClearLoadsStatusFilter = $("#btnClearLoadsStatusFilter");
+    if(btnClearLoadsStatusFilter) btnClearLoadsStatusFilter.onclick = () => { loadsStatusFilter = ""; render(); };
+
+    const btnHistory = $("#btnHistory");
+    if(btnHistory) btnHistory.onclick = (e) => { e.stopPropagation(); historyMenuOpen = !historyMenuOpen; confirmDeleteKey = null; render(); };
+    const historyMenu = $("#historyMenu");
+    if(historyMenu){
+      historyMenu.querySelectorAll("button[data-key]").forEach(b => {
+        b.onclick = () => { selectedKey = b.getAttribute("data-key"); historyMenuOpen = false; render(); };
+      });
+    }
+    // delete-confirm controls appear both in the header history dropdown and on the
+    // uploads page — bind them generically wherever they show up.
+    document.querySelectorAll("button[data-del]").forEach(b => {
+      b.onclick = (e) => { e.stopPropagation(); confirmDeleteKey = b.getAttribute("data-del"); render(); };
+    });
+    document.querySelectorAll("button[data-del-no]").forEach(b => {
+      b.onclick = (e) => { e.stopPropagation(); confirmDeleteKey = null; render(); };
+    });
+    document.querySelectorAll("button[data-del-yes]").forEach(b => {
+      b.onclick = async (e) => {
+        e.stopPropagation();
+        const key = b.getAttribute("data-del-yes");
+        b.disabled = true;
+        b.textContent = "Excluindo…";
+        try{
+          await deleteSnapshot(key);
+          if(selectedKey === key) selectedKey = null;
+        }catch(err){ /* deletion failed silently — snapshot list stays unchanged */ }
+        confirmDeleteKey = null;
+        render();
+      };
+    });
+
+    const btnHelpSide = $("#btnHelpSide");
+    if(btnHelpSide) btnHelpSide.onclick = (e) => { e.stopPropagation(); helpOpen = !helpOpen; render(); };
+
+    const btnBell = $("#btnBell");
+    if(btnBell) btnBell.onclick = () => goSection("trancadas");
+
+    const btnAvatar = $("#btnAvatar");
+    if(btnAvatar) btnAvatar.onclick = (e) => {
+      e.stopPropagation();
+      if(currentUser) profileOpen = !profileOpen; else signIn();
+      render();
+    };
+    const btnSignOut = $("#btnSignOut");
+    if(btnSignOut) btnSignOut.onclick = (e) => { e.stopPropagation(); signOutUser(); render(); };
+
+    const btnExportCsv = $("#btnExportCsv");
+    if(btnExportCsv) btnExportCsv.onclick = () => exportCurrentCsv();
+    const btnShare = $("#btnShare");
+    if(btnShare) btnShare.onclick = () => shareApp(btnShare);
+
+    const btnPrev = $("#btnPrevDay"), btnNext = $("#btnNextDay");
+    if(btnPrev) btnPrev.onclick = () => {
+      const idx = history.findIndex(h=>snapKey(h)===selectedKey);
+      if(idx !== -1 && idx < history.length-1){ selectedKey = snapKey(history[idx+1]); render(); }
+    };
+    if(btnNext) btnNext.onclick = () => {
+      const idx = history.findIndex(h=>snapKey(h)===selectedKey);
+      if(idx > 0){ selectedKey = snapKey(history[idx-1]); render(); }
+    };
+
+    document.querySelectorAll(".section-head[data-sec]").forEach(el => {
+      el.onclick = () => { const k = el.getAttribute("data-sec"); collapsed[k] = !collapsed[k]; render(); };
+    });
+    document.querySelectorAll(".toggle-btn[data-tab]").forEach(b => {
+      b.onclick = (e) => { e.stopPropagation(); trancadasTab = b.getAttribute("data-tab"); render(); };
+    });
+    document.querySelectorAll(".toggle-btn[data-loads-status]").forEach(b => {
+      b.onclick = (e) => { e.stopPropagation(); loadsStatusFilter = b.getAttribute("data-loads-status"); render(); };
+    });
+
+    const headerSearch = $("#headerSearch");
+    if(headerSearch){
+      if(searchHadFocus){
+        headerSearch.focus();
+        const val = headerSearch.value;
+        headerSearch.setSelectionRange(val.length, val.length);
+        searchHadFocus = false;
+      }
+      headerSearch.oninput = (e) => {
+        loadsFilter = e.target.value;
+        collapsed.loads = false;
+        searchHadFocus = true;
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(render, 250);
+      };
+    }
+
+    const btnCancelUpload = $("#btnCancelUpload");
+    if(btnCancelUpload) btnCancelUpload.onclick = () => { pendingSnapshot = null; parseError = null; render(); };
+    const btnUseToday = $("#btnUseToday");
+    if(btnUseToday) btnUseToday.onclick = () => {
+      if(!pendingSnapshot) return;
+      pendingSnapshot.date = todayIso();
+      pendingSnapshot.weekdayLabel = weekdayLabelFor(pendingSnapshot.date);
+      render();
+    };
+    const confirmDateInput = $("#confirmDate");
+    if(confirmDateInput) confirmDateInput.onchange = (e) => {
+      if(!pendingSnapshot || !e.target.value) return;
+      pendingSnapshot.date = e.target.value;
+      pendingSnapshot.weekdayLabel = weekdayLabelFor(pendingSnapshot.date);
+      render();
+    };
+    document.querySelectorAll("button[data-periodo]").forEach(b => {
+      b.onclick = () => {
+        if(!pendingSnapshot) return;
+        pendingSnapshot.periodo = b.getAttribute("data-periodo");
+        render();
+      };
+    });
+    const btnConfirmUpload = $("#btnConfirmUpload");
+    if(btnConfirmUpload) btnConfirmUpload.onclick = async () => {
+      const dateInput = $("#confirmDate");
+      if(dateInput && dateInput.value) pendingSnapshot.date = dateInput.value;
+      pendingSnapshot.weekdayLabel = weekdayLabelFor(pendingSnapshot.date);
+      btnConfirmUpload.disabled = true;
+      btnConfirmUpload.textContent = "Salvando…";
+      try{
+        await saveSnapshot(pendingSnapshot);
+        pendingSnapshot = null;
+        render();
+      }catch(err){
+        parseError = "Não consegui salvar: " + (err && err.message ? err.message : String(err));
+        pendingSnapshot = null;
+        render();
+      }
+    };
+
+    if(historyMenuOpen || helpOpen || profileOpen){
+      setTimeout(() => {
+        document.addEventListener("click", function onDoc(){
+          historyMenuOpen = false; helpOpen = false; confirmDeleteKey = null; profileOpen = false;
+          render();
+          document.removeEventListener("click", onDoc);
+        }, {once:true});
+      },0);
+    }
+  }
+
+  /* ============================================================
+     GLOBAL DRAG & DROP
+     ============================================================ */
+  function setupGlobalDnd(){
+    let overlayEl = null;
+    function showOverlay(){
+      if(overlayEl) return;
+      overlayEl = document.createElement("div");
+      overlayEl.className = "drag-overlay";
+      overlayEl.innerHTML = `<div class="dg">Solte a planilha para enviar</div>`;
+      document.body.appendChild(overlayEl);
+    }
+    function hideOverlay(){
+      if(overlayEl){ overlayEl.remove(); overlayEl = null; }
+    }
+    window.addEventListener("dragenter", (e) => {
+      e.preventDefault();
+      dragCounter++;
+      if(Array.from(e.dataTransfer.types||[]).includes("Files")) showOverlay();
+    });
+    window.addEventListener("dragover", (e) => e.preventDefault());
+    window.addEventListener("dragleave", (e) => {
+      dragCounter = Math.max(0, dragCounter-1);
+      if(dragCounter===0) hideOverlay();
+    });
+    window.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      hideOverlay();
+      if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+        handleFiles(e.dataTransfer.files);
+      }
+    });
+  }
+
+  /* ============================================================
+     INIT
+     ============================================================ */
+  setupGlobalDnd();
+  render();
+  initDb();
+})();
+</script>

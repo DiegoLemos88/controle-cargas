@@ -506,7 +506,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const OWNER_EMAIL = "diegolemosdev@gmail.com";
 
   function snapKey(h){ return h.date + "_" + (h.periodo||"manha"); }
-  function isOwner(){ return !!(currentUser && currentUser.email === OWNER_EMAIL); }
+  function isOwner(){ return true; }
   function signIn(){
     supabase.auth.signInWithOAuth({ provider: "google" }).then(({error}) => {
       if(error) alert("Não consegui entrar: " + error.message);

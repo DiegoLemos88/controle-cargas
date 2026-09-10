@@ -429,7 +429,7 @@
    ============================================================ */
 const SUPABASE_URL = "https://tllsjernrpajejuejpuq.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_t6nqYMTlveF7V1rEuJrG3g_Zd3woeth";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 <script>
 (function(){
@@ -508,12 +508,12 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function snapKey(h){ return h.date + "_" + (h.periodo||"manha"); }
   function isOwner(){ return true; }
   function signIn(){
-    supabase.auth.signInWithOAuth({ provider: "google" }).then(({error}) => {
+    supabaseClient.auth.signInWithOAuth({ provider: "google" }).then(({error}) => {
       if(error) alert("Não consegui entrar: " + error.message);
     });
   }
   function signOutUser(){
-    supabase.auth.signOut();
+    supabaseClient.auth.signOut();
     profileOpen = false;
   }
 
@@ -745,7 +745,7 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
      DB / DATA LAYER
      ============================================================ */
   async function fetchHistory(){
-    const {data, error} = await supabase.from("dias").select("data").order("date",{ascending:false}).limit(90);
+    const {data, error} = await supabaseClient.from("dias").select("data").order("date",{ascending:false}).limit(90);
     if(error){ console.error("db fetch error", error); render(); return; }
     history = (data||[]).map(row => row.data);
     history.sort((a,b) => {
@@ -760,14 +760,14 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   function initDb(){
     dbReady = true;
     fetchHistory();
-    supabase.channel("dias-changes")
+    supabaseClient.channel("dias-changes")
       .on("postgres_changes", {event:"*", schema:"public", table:"dias"}, fetchHistory)
       .subscribe();
-    supabase.auth.getSession().then(({data}) => {
+    supabaseClient.auth.getSession().then(({data}) => {
       currentUser = data.session ? data.session.user : null;
       render();
     });
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
       currentUser = session ? session.user : null;
       render();
     });
@@ -780,14 +780,14 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   async function saveSnapshot(snapshot){
     if(!dbReady || !isOwner()) throw new Error("Somente o administrador pode salvar planilhas.");
     const key = snapKey(snapshot);
-    const {error} = await supabase.from("dias").upsert({id:key, date:snapshot.date, periodo:snapshot.periodo||"manha", data:snapshot});
+    const {error} = await supabaseClient.from("dias").upsert({id:key, date:snapshot.date, periodo:snapshot.periodo||"manha", data:snapshot});
     if(error) throw new Error(error.message);
     selectedKey = key;
   }
 
   async function deleteSnapshot(key){
     if(!dbReady || !isOwner()) throw new Error("Somente o administrador pode excluir planilhas.");
-    const {error} = await supabase.from("dias").delete().eq("id", key);
+    const {error} = await supabaseClient.from("dias").delete().eq("id", key);
     if(error) throw new Error(error.message);
   }
 

@@ -533,9 +533,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
   }
   function fmtInt(n){ return Number(n||0).toLocaleString("pt-BR"); }
   function fmtKg(n){
-    n = Number(n||0);
-    if(n >= 1000) return (n/1000).toLocaleString("pt-BR",{maximumFractionDigits:1}) + " t";
-    return n.toLocaleString("pt-BR",{maximumFractionDigits:0}) + " kg";
+    return Number(n||0).toLocaleString("pt-BR",{maximumFractionDigits:1}) + " t";
   }
   function fmtDateBR(iso){
     if(!iso) return "—";
@@ -729,6 +727,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
     return {
       date: reportDate,
       dateAutoDetected,
+      lastShiftDate: "",
       periodo: (new Date().getHours() < 13) ? "manha" : "tarde",
       weekdayLabel: summary.anteriorLabel || weekdayLabelFor(reportDate),
       uploadedAt: new Date().toISOString(),
@@ -829,7 +828,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
   function exportCurrentCsv(){
     const cur = selectedKey ? findSnapshot(selectedKey) : (history[0] || null);
     if(!cur) return;
-    const headers = ["Fornecedor","Chegada","SIF","Habilitação","Produto","Placa","Peso (kg)","Status","Temp","Obs."];
+    const headers = ["Fornecedor","Chegada","SIF","Habilitação","Produto","Placa","Peso (t)","Status","Temp","Obs."];
     const rows = (cur.loads||[]).map(l => [
       l.origem, l.dataChegada, l.sif, l.habilitacao, l.produtos, l.placa,
       l.peso ? String(l.peso).replace(".",",") : "", l.status, l.temp, l.obs
@@ -892,7 +891,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
       </div>`;
     }).join("") + `</div>`;
   }
-  function fmtKgPlain(n){ return Number(n||0).toLocaleString("pt-BR",{maximumFractionDigits:0}) + " kg"; }
+  function fmtKgPlain(n){ return Number(n||0).toLocaleString("pt-BR",{maximumFractionDigits:1}) + " t"; }
 
 
   /* ============================================================
@@ -1067,12 +1066,13 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
     const s = cur.summary || {};
     const idx = history.findIndex(h=>snapKey(h)===snapKey(cur));
     const prev = idx!==-1 ? history[idx+1] : null;
+    const dateSuffix = cur.lastShiftDate ? ` (${fmtDateBR(cur.lastShiftDate)})` : "";
     const items = [
-      {value:fmtInt(s.anterior), label:`Carretas do dia ${esc((s.anteriorLabel||"anterior").toLowerCase())}`,
+      {value:fmtInt(s.anterior), label:`Carretas${dateSuffix}`,
         trend: trendPill(prev ? calcDelta(s.anterior, prev.summary && prev.summary.anterior) : null)},
-      {value:fmtInt(s.descarregada), label:"Descarga",
+      {value:fmtInt(s.descarregada), label:`Descarregadas${dateSuffix}`,
         trend: trendPill(prev ? calcDelta(s.descarregada, prev.summary && prev.summary.descarregada) : null)},
-      {value:fmtInt(s.chegou), label:"Chegaram",
+      {value:fmtInt(s.chegou), label:`Chegaram${dateSuffix}`,
         trend: trendPill(prev ? calcDelta(s.chegou, prev.summary && prev.summary.chegou) : null)},
     ];
     return kpiSection("Quantidade de cargas", items);
@@ -1399,6 +1399,10 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
             </div>
           </div>
           <div class="field-row">
+            <label>Data do último expediente</label>
+            <input type="date" id="confirmLastShiftDate" value="${esc(s.lastShiftDate||"")}"/>
+          </div>
+          <div class="field-row">
             <label>Período</label>
             <div class="toggle-row" style="margin-bottom:0;">
               <button type="button" class="toggle-btn ${periodo==='manha'?'active':''}" data-periodo="manha">Manhã</button>
@@ -1621,6 +1625,12 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
       pendingSnapshot.weekdayLabel = weekdayLabelFor(pendingSnapshot.date);
       render();
     };
+    const confirmLastShiftDateInput = $("#confirmLastShiftDate");
+    if(confirmLastShiftDateInput) confirmLastShiftDateInput.onchange = (e) => {
+      if(!pendingSnapshot) return;
+      pendingSnapshot.lastShiftDate = e.target.value;
+      render();
+    };
     document.querySelectorAll("button[data-periodo]").forEach(b => {
       b.onclick = () => {
         if(!pendingSnapshot) return;
@@ -1632,6 +1642,8 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
     if(btnConfirmUpload) btnConfirmUpload.onclick = async () => {
       const dateInput = $("#confirmDate");
       if(dateInput && dateInput.value) pendingSnapshot.date = dateInput.value;
+      const lastShiftDateInput = $("#confirmLastShiftDate");
+      if(lastShiftDateInput) pendingSnapshot.lastShiftDate = lastShiftDateInput.value;
       pendingSnapshot.weekdayLabel = weekdayLabelFor(pendingSnapshot.date);
       btnConfirmUpload.disabled = true;
       btnConfirmUpload.textContent = "Salvando…";

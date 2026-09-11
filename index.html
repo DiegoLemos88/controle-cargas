@@ -228,7 +228,7 @@
   .kt-trend.down{background:var(--critical-soft); color:var(--critical);}
 
   /* ---------- stat pair (Total na unidade / Peso recebido) ---------- */
-  .stat-stack{display:flex; flex-direction:column; gap:14px; height:100%;}
+  .stat-stack{display:flex; flex-direction:column; gap:14px; flex:1; min-height:0;}
   .stat-card{background:var(--surface); border-radius:24px; padding:20px 22px; flex:1; display:flex; flex-direction:column; justify-content:center;}
   .stat-card.dark{background:linear-gradient(165deg, var(--card-dark-2), var(--card-dark)); box-shadow:0 16px 32px -14px rgba(0,0,0,.4);}
   .stat-card.dark .stat-label{color:#fff;}
@@ -538,7 +538,6 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
   let collapsed = {trancadas:true, loads:true};
 
   const WEEKDAY_PT = ["DOMINGO","SEGUNDA","TERÇA","QUARTA","QUINTA","SEXTA","SÁBADO"];
-  const WEEKDAY_PT_SHORT = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
   const PERIODO_LABEL = {manha:"Manhã", tarde:"Tarde"};
 
   /* Troque pelo e-mail Google que deve ter permissão de gravação (a única conta
@@ -1158,8 +1157,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
   function shortDateWithWeekday(iso){
     if(!iso) return "";
     const [y,m,d] = iso.split("-");
-    const wd = WEEKDAY_PT_SHORT[new Date(iso+"T12:00:00").getDay()];
-    return `${d}/${m} · ${wd}`;
+    return `${d}/${m}`;
   }
 
   function renderKpis(cur){
@@ -1189,7 +1187,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
       {value:fmtInt(sa.trancada), label:"Trancadas",
         trend: trendPill(prev ? calcDelta(sa.trancada, prev.statusAnalises && prev.statusAnalises.trancada) : null)},
     ];
-    return kpiSection("Status das cargas para análise", items, shortDateWithWeekday(cur.lastShiftDate));
+    return kpiSection("Status das cargas para análise", items, shortDateWithWeekday(cur.date));
   }
 
   function renderTotalPesoStack(cur){
@@ -1199,20 +1197,23 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
     const peso = totalPesoDescarregado(cur.loads);
     const pesoPrev = prev ? totalPesoDescarregado(prev.loads) : null;
     const dPeso = prev ? calcDelta(peso, pesoPrev) : null;
-    const dateLabel = shortDateWithWeekday(cur.lastShiftDate);
+    const hojeDateLabel = shortDateWithWeekday(cur.date);
+    const pesoDateLabel = shortDateWithWeekday(cur.lastShiftDate);
 
-    return `<div class="kpi-section-label">Cargas e Peso${dateLabel ? `<span class="kpi-section-date">${esc(dateLabel)}</span>` : ""}</div>
+    return `<div style="display:flex; flex-direction:column; height:100%;">
+    <div class="kpi-section-label">Cargas e Peso</div>
     <div class="stat-stack">
       <div class="stat-card dark">
-        <div class="kt-top"><div class="stat-label" style="margin-bottom:0;">Total de cargas na unidade</div><span class="tile-badge">${ICON.arrowUpRight}</span></div>
+        <div class="kt-top"><div class="stat-label" style="margin-bottom:0;">Total de cargas na unidade${hojeDateLabel ? `<span class="kpi-section-date">${esc(hojeDateLabel)}</span>` : ""}</div><span class="tile-badge">${ICON.arrowUpRight}</span></div>
         <div class="stat-row" style="margin-top:11px;"><div class="stat-value">${fmtInt(cur.summary.hoje)}</div>${pillDelta(dHoje, false)}</div>
         ${dayCompareLine(cur, cur.summary.hoje, h => (h.summary && h.summary.hoje) || 0, fmtInt)}
       </div>
       <div class="stat-card dark">
-        <div class="kt-top"><div class="stat-label" style="margin-bottom:0;">Peso recebido</div><span class="tile-badge">${ICON.arrowUpRight}</span></div>
+        <div class="kt-top"><div class="stat-label" style="margin-bottom:0;">Peso recebido${pesoDateLabel ? `<span class="kpi-section-date">${esc(pesoDateLabel)}</span>` : ""}</div><span class="tile-badge">${ICON.arrowUpRight}</span></div>
         <div class="stat-row" style="margin-top:11px;"><div class="stat-value">${fmtKg(peso)}</div>${pillDelta(dPeso, true)}</div>
         ${dayCompareLine(cur, peso, h => totalPesoDescarregado(h.loads), fmtKg)}
       </div>
+    </div>
     </div>`;
   }
 
